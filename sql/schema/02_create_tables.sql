@@ -168,6 +168,104 @@ CREATE TABLE operational.workforce_metrics (
             )
         )
 );
+CREATE TABLE operational.incidents (
+    incident_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    trust_id BIGINT NOT NULL,
+
+    incident_reference VARCHAR(100) NOT NULL,
+    incident_type VARCHAR(100) NOT NULL,
+    severity_level VARCHAR(30) NOT NULL,
+    incident_status VARCHAR(30) NOT NULL DEFAULT 'open',
+
+    incident_started_at TIMESTAMPTZ NOT NULL,
+    incident_reported_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    incident_resolved_at TIMESTAMPTZ,
+
+    service_area VARCHAR(150),
+    operational_impact TEXT,
+
+    source_system VARCHAR(100) NOT NULL,
+    data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
+    record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_incidents
+        PRIMARY KEY (incident_id),
+
+    CONSTRAINT fk_incidents_trust
+        FOREIGN KEY (trust_id)
+        REFERENCES operational.trusts(trust_id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT,
+
+    CONSTRAINT uq_incidents_source_reference
+        UNIQUE (source_system, incident_reference),
+
+    CONSTRAINT chk_incidents_reference_not_blank
+        CHECK (BTRIM(incident_reference) <> ''),
+
+    CONSTRAINT chk_incidents_type_not_blank
+        CHECK (BTRIM(incident_type) <> ''),
+
+    CONSTRAINT chk_incidents_severity
+        CHECK (
+            severity_level IN (
+                'low',
+                'moderate',
+                'high',
+                'critical'
+            )
+        ),
+
+    CONSTRAINT chk_incidents_status
+        CHECK (
+            incident_status IN (
+                'open',
+                'monitoring',
+                'resolved',
+                'closed'
+            )
+        ),
+
+    CONSTRAINT chk_incidents_resolution_time
+        CHECK (
+            incident_resolved_at IS NULL
+            OR incident_resolved_at >= incident_started_at
+        ),
+
+    CONSTRAINT chk_incidents_quality_status
+        CHECK (
+            data_quality_status IN (
+                'unreviewed',
+                'valid',
+                'warning',
+                'rejected'
+            )
+        )
+);
+
+SELECT *
+FROM operational.incidents;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
