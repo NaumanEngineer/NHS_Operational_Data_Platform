@@ -333,7 +333,96 @@ CREATE TABLE operational.weather_metrics (
 SELECT *
 FROM operational.weather_metrics;
 
+CREATE TABLE operational.opel_assessments (
+    opel_assessment_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    trust_id BIGINT NOT NULL,
 
+    assessment_timestamp TIMESTAMPTZ NOT NULL,
+    recommended_opel_level SMALLINT,
+    approved_opel_level SMALLINT,
+    previous_approved_opel_level SMALLINT,
+
+    assessment_method VARCHAR(30) NOT NULL,
+    assessment_rationale TEXT,
+    key_pressure_factors TEXT,
+
+    approval_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    assessed_by VARCHAR(150),
+    approved_by VARCHAR(150),
+    approved_at TIMESTAMPTZ,
+
+    rule_version VARCHAR(50),
+
+    source_system VARCHAR(100) NOT NULL,
+    data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
+    record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_opel_assessments
+        PRIMARY KEY (opel_assessment_id),
+
+    CONSTRAINT fk_opel_assessments_trust
+        FOREIGN KEY (trust_id)
+        REFERENCES operational.trusts(trust_id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_opel_recommended_level
+        CHECK (
+            recommended_opel_level IS NULL
+            OR recommended_opel_level BETWEEN 1 AND 4
+        ),
+
+    CONSTRAINT chk_opel_approved_level
+        CHECK (
+            approved_opel_level IS NULL
+            OR approved_opel_level BETWEEN 1 AND 4
+        ),
+
+    CONSTRAINT chk_opel_previous_level
+        CHECK (
+            previous_approved_opel_level IS NULL
+            OR previous_approved_opel_level BETWEEN 1 AND 4
+        ),
+
+    CONSTRAINT chk_opel_assessment_method
+        CHECK (
+            assessment_method IN (
+                'manual',
+                'rules_based',
+                'analyst_supported'
+            )
+        ),
+
+    CONSTRAINT chk_opel_approval_status
+        CHECK (
+            approval_status IN (
+                'pending',
+                'approved',
+                'rejected',
+                'superseded'
+            )
+        ),
+
+    CONSTRAINT chk_opel_approval_timestamp
+        CHECK (
+            approved_at IS NULL
+            OR approved_at >= assessment_timestamp
+        ),
+
+    CONSTRAINT chk_opel_quality_status
+        CHECK (
+            data_quality_status IN (
+                'unreviewed',
+                'valid',
+                'warning',
+                'rejected'
+            )
+        )
+);
+
+SELECT *
+FROM operational.opel_assessments;
 
 
 
