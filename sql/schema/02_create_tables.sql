@@ -114,3 +114,60 @@ CREATE TABLE operational.daily_operational_metrics (
 
 SELECT *
 FROM operational.daily_operational_metrics;
+
+CREATE TABLE operational.workforce_metrics (
+    workforce_metric_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    trust_id BIGINT NOT NULL,
+    reporting_date DATE NOT NULL,
+    staff_group VARCHAR(100) NOT NULL,
+
+    establishment_fte NUMERIC(10,2),
+    substantive_fte NUMERIC(10,2),
+    absence_fte NUMERIC(10,2),
+    agency_fte NUMERIC(10,2),
+    bank_fte NUMERIC(10,2),
+    unfilled_shifts INTEGER,
+
+    source_system VARCHAR(100) NOT NULL,
+    data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
+    record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_workforce_metrics
+        PRIMARY KEY (workforce_metric_id),
+
+    CONSTRAINT fk_workforce_metrics_trust
+        FOREIGN KEY (trust_id)
+        REFERENCES operational.trusts(trust_id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT,
+
+    CONSTRAINT uq_workforce_metrics_trust_date_group
+        UNIQUE (trust_id, reporting_date, staff_group),
+
+    CONSTRAINT chk_workforce_metrics_non_negative
+        CHECK (
+            COALESCE(establishment_fte, 0) >= 0
+            AND COALESCE(substantive_fte, 0) >= 0
+            AND COALESCE(absence_fte, 0) >= 0
+            AND COALESCE(agency_fte, 0) >= 0
+            AND COALESCE(bank_fte, 0) >= 0
+            AND COALESCE(unfilled_shifts, 0) >= 0
+        ),
+
+    CONSTRAINT chk_workforce_metrics_staff_group_not_blank
+        CHECK (BTRIM(staff_group) <> ''),
+
+    CONSTRAINT chk_workforce_metrics_quality_status
+        CHECK (
+            data_quality_status IN (
+                'unreviewed',
+                'valid',
+                'warning',
+                'rejected'
+            )
+        )
+);
+
+
+
