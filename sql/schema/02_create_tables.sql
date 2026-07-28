@@ -247,7 +247,91 @@ CREATE TABLE operational.incidents (
 SELECT *
 FROM operational.incidents;
 
+CREATE TABLE operational.weather_metrics (
+    weather_metric_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    trust_id BIGINT NOT NULL,
+    reporting_date DATE NOT NULL,
 
+    observation_type VARCHAR(30) NOT NULL,
+    forecast_generated_at TIMESTAMPTZ,
+
+    temperature_min_c NUMERIC(5,2),
+    temperature_max_c NUMERIC(5,2),
+    precipitation_mm NUMERIC(8,2),
+    snowfall_mm NUMERIC(8,2),
+    wind_speed_mph NUMERIC(6,2),
+
+    weather_warning_level VARCHAR(30),
+    weather_warning_type VARCHAR(100),
+
+    source_system VARCHAR(100) NOT NULL,
+    data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
+    record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_weather_metrics
+        PRIMARY KEY (weather_metric_id),
+
+    CONSTRAINT fk_weather_metrics_trust
+        FOREIGN KEY (trust_id)
+        REFERENCES operational.trusts(trust_id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT,
+
+    CONSTRAINT uq_weather_metrics_trust_date_type
+        UNIQUE (
+            trust_id,
+            reporting_date,
+            observation_type,
+            forecast_generated_at
+        ),
+
+    CONSTRAINT chk_weather_metrics_observation_type
+        CHECK (
+            observation_type IN (
+                'observed',
+                'forecast',
+                'warning'
+            )
+        ),
+
+    CONSTRAINT chk_weather_metrics_temperature_range
+        CHECK (
+            temperature_min_c IS NULL
+            OR temperature_max_c IS NULL
+            OR temperature_min_c <= temperature_max_c
+        ),
+
+    CONSTRAINT chk_weather_metrics_non_negative
+        CHECK (
+            COALESCE(precipitation_mm, 0) >= 0
+            AND COALESCE(snowfall_mm, 0) >= 0
+            AND COALESCE(wind_speed_mph, 0) >= 0
+        ),
+
+    CONSTRAINT chk_weather_metrics_warning_level
+        CHECK (
+            weather_warning_level IS NULL
+            OR weather_warning_level IN (
+                'yellow',
+                'amber',
+                'red'
+            )
+        ),
+
+    CONSTRAINT chk_weather_metrics_quality_status
+        CHECK (
+            data_quality_status IN (
+                'unreviewed',
+                'valid',
+                'warning',
+                'rejected'
+            )
+        )
+);
+
+SELECT *
+FROM operational.weather_metrics;
 
 
 
