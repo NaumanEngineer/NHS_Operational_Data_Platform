@@ -1,4 +1,4 @@
-Record your outcomes:
+Recorded outcomes:
 Test	Expected	Pass condition
 Missing Trust code	Rejected	NOT NULL error
 Duplicate Trust code	Rejected	Unique-constraint error
