@@ -1,4 +1,7 @@
-CREATE DATABASE nhs_operations;
+-- NHS Operational Data Platform
+-- Initial one-time PostgreSQL schema migration.
+-- Run while connected to the nhs_operations database.
+-- This script creates the operational schema and six core tables.
 CREATE SCHEMA IF NOT EXISTS operational;
 CREATE TABLE operational.trusts (
     trust_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -35,8 +38,6 @@ CREATE TABLE operational.trusts (
         )
 );
 
-SELECT *
-FROM operational.trusts;
 
 CREATE TABLE operational.daily_operational_metrics (
     operational_metric_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -112,8 +113,6 @@ CREATE TABLE operational.daily_operational_metrics (
         )
 );
 
-SELECT *
-FROM operational.daily_operational_metrics;
 
 CREATE TABLE operational.workforce_metrics (
     workforce_metric_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -168,6 +167,7 @@ CREATE TABLE operational.workforce_metrics (
             )
         )
 );
+
 CREATE TABLE operational.incidents (
     incident_id BIGINT GENERATED ALWAYS AS IDENTITY,
     trust_id BIGINT NOT NULL,
@@ -244,8 +244,7 @@ CREATE TABLE operational.incidents (
         )
 );
 
-SELECT *
-FROM operational.incidents;
+
 
 CREATE TABLE operational.weather_metrics (
     weather_metric_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -330,8 +329,7 @@ CREATE TABLE operational.weather_metrics (
         )
 );
 
-SELECT *
-FROM operational.weather_metrics;
+
 
 CREATE TABLE operational.opel_assessments (
     opel_assessment_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -421,8 +419,6 @@ CREATE TABLE operational.opel_assessments (
         )
 );
 
-SELECT *
-FROM operational.opel_assessments;
 
 
 
