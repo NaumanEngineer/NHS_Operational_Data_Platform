@@ -2,7 +2,10 @@
 -- Initial one-time PostgreSQL schema migration.
 -- Run while connected to the nhs_operations database.
 -- This script creates the operational schema and six core tables.
+
 CREATE SCHEMA IF NOT EXISTS operational;
+
+
 CREATE TABLE operational.trusts (
     trust_id BIGINT GENERATED ALWAYS AS IDENTITY,
     trust_code VARCHAR(10) NOT NULL,
@@ -10,7 +13,10 @@ CREATE TABLE operational.trusts (
     trust_type VARCHAR(100) NOT NULL,
     region VARCHAR(100) NOT NULL,
     active_flag BOOLEAN NOT NULL DEFAULT TRUE,
+
     source_system VARCHAR(100) NOT NULL,
+    source_record_id VARCHAR(150),
+    load_batch_id UUID,
     data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
     record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,6 +63,8 @@ CREATE TABLE operational.daily_operational_metrics (
     discharges INTEGER,
 
     source_system VARCHAR(100) NOT NULL,
+    source_record_id VARCHAR(150),
+    load_batch_id UUID,
     data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
     record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -95,6 +103,13 @@ CREATE TABLE operational.daily_operational_metrics (
             OR general_beds_occupied <= general_beds_open
         ),
 
+    CONSTRAINT chk_daily_operational_critical_care_beds
+        CHECK (
+            critical_care_beds_occupied IS NULL
+            OR critical_care_beds_open IS NULL
+            OR critical_care_beds_occupied <= critical_care_beds_open
+        ),
+
     CONSTRAINT chk_daily_operational_breaches
         CHECK (
             four_hour_breaches IS NULL
@@ -128,6 +143,8 @@ CREATE TABLE operational.workforce_metrics (
     unfilled_shifts INTEGER,
 
     source_system VARCHAR(100) NOT NULL,
+    source_record_id VARCHAR(150),
+    load_batch_id UUID,
     data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
     record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -142,7 +159,11 @@ CREATE TABLE operational.workforce_metrics (
         ON DELETE RESTRICT,
 
     CONSTRAINT uq_workforce_metrics_trust_date_group
-        UNIQUE (trust_id, reporting_date, staff_group),
+        UNIQUE (
+            trust_id,
+            reporting_date,
+            staff_group
+        ),
 
     CONSTRAINT chk_workforce_metrics_non_negative
         CHECK (
@@ -168,6 +189,7 @@ CREATE TABLE operational.workforce_metrics (
         )
 );
 
+
 CREATE TABLE operational.incidents (
     incident_id BIGINT GENERATED ALWAYS AS IDENTITY,
     trust_id BIGINT NOT NULL,
@@ -185,6 +207,8 @@ CREATE TABLE operational.incidents (
     operational_impact TEXT,
 
     source_system VARCHAR(100) NOT NULL,
+    source_record_id VARCHAR(150),
+    load_batch_id UUID,
     data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
     record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -199,7 +223,10 @@ CREATE TABLE operational.incidents (
         ON DELETE RESTRICT,
 
     CONSTRAINT uq_incidents_source_reference
-        UNIQUE (source_system, incident_reference),
+        UNIQUE (
+            source_system,
+            incident_reference
+        ),
 
     CONSTRAINT chk_incidents_reference_not_blank
         CHECK (BTRIM(incident_reference) <> ''),
@@ -233,6 +260,19 @@ CREATE TABLE operational.incidents (
             OR incident_resolved_at >= incident_started_at
         ),
 
+    CONSTRAINT chk_incidents_status_resolution
+        CHECK (
+            (
+                incident_status IN ('resolved', 'closed')
+                AND incident_resolved_at IS NOT NULL
+            )
+            OR
+            (
+                incident_status IN ('open', 'monitoring')
+                AND incident_resolved_at IS NULL
+            )
+        ),
+
     CONSTRAINT chk_incidents_quality_status
         CHECK (
             data_quality_status IN (
@@ -243,7 +283,6 @@ CREATE TABLE operational.incidents (
             )
         )
 );
-
 
 
 CREATE TABLE operational.weather_metrics (
@@ -264,6 +303,8 @@ CREATE TABLE operational.weather_metrics (
     weather_warning_type VARCHAR(100),
 
     source_system VARCHAR(100) NOT NULL,
+    source_record_id VARCHAR(150),
+    load_batch_id UUID,
     data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
     record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -292,6 +333,12 @@ CREATE TABLE operational.weather_metrics (
                 'forecast',
                 'warning'
             )
+        ),
+
+    CONSTRAINT chk_weather_forecast_timestamp
+        CHECK (
+            observation_type <> 'forecast'
+            OR forecast_generated_at IS NOT NULL
         ),
 
     CONSTRAINT chk_weather_metrics_temperature_range
@@ -330,7 +377,6 @@ CREATE TABLE operational.weather_metrics (
 );
 
 
-
 CREATE TABLE operational.opel_assessments (
     opel_assessment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     trust_id BIGINT NOT NULL,
@@ -339,19 +385,22 @@ CREATE TABLE operational.opel_assessments (
     recommended_opel_level SMALLINT,
     approved_opel_level SMALLINT,
     previous_approved_opel_level SMALLINT,
+    prediction_confidence NUMERIC(5,4),
 
     assessment_method VARCHAR(30) NOT NULL,
     assessment_rationale TEXT,
     key_pressure_factors TEXT,
 
     approval_status VARCHAR(30) NOT NULL DEFAULT 'pending',
-    assessed_by VARCHAR(150),
-    approved_by VARCHAR(150),
-    approved_at TIMESTAMPTZ,
+    assessed_by_role VARCHAR(150),
+    reviewed_by_role VARCHAR(150),
+    reviewed_at TIMESTAMPTZ,
 
     rule_version VARCHAR(50),
 
     source_system VARCHAR(100) NOT NULL,
+    source_record_id VARCHAR(150),
+    load_batch_id UUID,
     data_quality_status VARCHAR(30) NOT NULL DEFAULT 'unreviewed',
     record_created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     record_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -383,6 +432,12 @@ CREATE TABLE operational.opel_assessments (
             OR previous_approved_opel_level BETWEEN 1 AND 4
         ),
 
+    CONSTRAINT chk_opel_prediction_confidence
+        CHECK (
+            prediction_confidence IS NULL
+            OR prediction_confidence BETWEEN 0 AND 1
+        ),
+
     CONSTRAINT chk_opel_assessment_method
         CHECK (
             assessment_method IN (
@@ -402,10 +457,20 @@ CREATE TABLE operational.opel_assessments (
             )
         ),
 
-    CONSTRAINT chk_opel_approval_timestamp
+    CONSTRAINT chk_opel_review_timestamp
         CHECK (
-            approved_at IS NULL
-            OR approved_at >= assessment_timestamp
+            reviewed_at IS NULL
+            OR reviewed_at >= assessment_timestamp
+        ),
+
+    CONSTRAINT chk_opel_approved_record_complete
+        CHECK (
+            approval_status <> 'approved'
+            OR (
+                approved_opel_level IS NOT NULL
+                AND reviewed_by_role IS NOT NULL
+                AND reviewed_at IS NOT NULL
+            )
         ),
 
     CONSTRAINT chk_opel_quality_status
