@@ -954,4 +954,152 @@ SELECT
     'valid'
 FROM generated_records;
 
+-- ============================================================
+-- 6. OPEL ASSESSMENTS
+-- Expected rows: 90
+-- Grain: one assessment per Trust and reporting date
+-- ============================================================
+
+WITH reporting_dates AS (
+    SELECT generate_series(
+        DATE '2026-01-01',
+        DATE '2026-01-30',
+        INTERVAL '1 day'
+    )::DATE AS assessment_date
+),
+trust_dates AS (
+    SELECT
+        t.trust_id,
+        t.trust_code,
+        d.assessment_date,
+        EXTRACT(DAY FROM d.assessment_date)::INTEGER AS day_number
+    FROM operational.trusts AS t
+    CROSS JOIN reporting_dates AS d
+    WHERE t.trust_code IN ('WGH001', 'NRT002', 'SCT003')
+),
+recommendations AS (
+    SELECT
+        trust_id,
+        trust_code,
+        assessment_date,
+        day_number,
+
+        CASE
+            WHEN day_number BETWEEN 1 AND 7 THEN 1
+            WHEN day_number BETWEEN 8 AND 14 THEN 2
+            WHEN day_number BETWEEN 15 AND 22 THEN
+                CASE
+                    WHEN trust_code = 'SCT003' THEN 2
+                    ELSE 3
+                END
+            ELSE
+                CASE
+                    WHEN trust_code = 'WGH001' THEN 4
+                    WHEN trust_code = 'NRT002' THEN 3
+                    ELSE 3
+                END
+        END AS recommended_opel_level
+    FROM trust_dates
+),
+approved_decisions AS (
+    SELECT
+        trust_id,
+        trust_code,
+        assessment_date,
+        day_number,
+        recommended_opel_level,
+
+        CASE
+            -- Deliberate examples of human review overriding the recommendation
+            WHEN trust_code = 'WGH001' AND day_number = 18 THEN 2
+            WHEN trust_code = 'WGH001' AND day_number = 27 THEN 3
+            WHEN trust_code = 'NRT002' AND day_number = 13 THEN 3
+            WHEN trust_code = 'SCT003' AND day_number = 24 THEN 2
+            ELSE recommended_opel_level
+        END AS approved_opel_level
+    FROM recommendations
+),
+final_assessments AS (
+    SELECT
+        trust_id,
+        trust_code,
+        assessment_date,
+        day_number,
+        recommended_opel_level,
+        approved_opel_level,
+
+        LAG(approved_opel_level) OVER (
+            PARTITION BY trust_id
+            ORDER BY assessment_date
+        ) AS previous_approved_opel_level
+    FROM approved_decisions
+)
+INSERT INTO operational.opel_assessments (
+    trust_id,
+    assessment_date,
+    assessment_timestamp,
+    recommended_opel_level,
+    approved_opel_level,
+    previous_approved_opel_level,
+    prediction_confidence,
+    assessment_method,
+    rule_version,
+    decision_rationale,
+    reviewed_by_role,
+    reviewed_at,
+    source_system,
+    source_record_id,
+    load_batch_id,
+    data_quality_status
+)
+SELECT
+    trust_id,
+    assessment_date,
+
+    assessment_date::TIMESTAMP
+        + TIME '10:00:00',
+
+    recommended_opel_level,
+    approved_opel_level,
+    previous_approved_opel_level,
+
+    CASE recommended_opel_level
+        WHEN 1 THEN 0.91
+        WHEN 2 THEN 0.87
+        WHEN 3 THEN 0.83
+        WHEN 4 THEN 0.79
+    END,
+
+    'rules_based',
+
+    'opel_rules_v1.0',
+
+    CASE
+        WHEN approved_opel_level <> recommended_opel_level THEN
+            'Human reviewer adjusted the rules-based recommendation using synthetic contextual information.'
+        WHEN recommended_opel_level = 4 THEN
+            'Synthetic critical pressure across capacity, demand, workforce and operational indicators.'
+        WHEN recommended_opel_level = 3 THEN
+            'Synthetic significant pressure requiring enhanced operational coordination.'
+        WHEN recommended_opel_level = 2 THEN
+            'Synthetic moderate pressure requiring active monitoring and management.'
+        ELSE
+            'Synthetic operational conditions remained within routine management arrangements.'
+    END,
+
+    'Duty Operations Manager',
+
+    assessment_date::TIMESTAMP
+        + TIME '10:30:00',
+
+    'synthetic_seed_v1',
+
+    'OPEL-' || trust_code || '-' ||
+    TO_CHAR(assessment_date, 'YYYYMMDD'),
+
+    '11111111-1111-4111-8111-111111111111',
+
+    'valid'
+FROM final_assessments;
+
 -- COMMIT will be added after all synthetic data sections are complete.
