@@ -246,5 +246,141 @@ SELECT
     'valid'
 FROM generated_records;
 
+-- ============================================================
+-- 3. WORKFORCE METRICS
+-- Expected rows: 90
+-- Grain: one row per Trust, reporting date, and staff group
+-- ============================================================
+
+WITH reporting_dates AS (
+    SELECT generate_series(
+        DATE '2026-01-01',
+        DATE '2026-01-30',
+        INTERVAL '1 day'
+    )::DATE AS reporting_date
+),
+trust_profiles AS (
+    SELECT
+        trust_id,
+        trust_code,
+        CASE trust_code
+            WHEN 'WGH001' THEN 1180.00
+            WHEN 'NRT002' THEN 940.00
+            WHEN 'SCT003' THEN 430.00
+        END::NUMERIC(10,2) AS establishment_fte
+    FROM operational.trusts
+    WHERE trust_code IN ('WGH001', 'NRT002', 'SCT003')
+),
+generated_records AS (
+    SELECT
+        tp.trust_id,
+        tp.trust_code,
+        tp.establishment_fte,
+        rd.reporting_date,
+        EXTRACT(DAY FROM rd.reporting_date)::INTEGER AS day_number
+    FROM trust_profiles AS tp
+    CROSS JOIN reporting_dates AS rd
+)
+INSERT INTO operational.workforce_metrics (
+    trust_id,
+    reporting_date,
+    staff_group,
+    establishment_fte,
+    substantive_fte,
+    absence_fte,
+    agency_fte,
+    bank_fte,
+    unfilled_shifts,
+    source_system,
+    source_record_id,
+    load_batch_id,
+    data_quality_status
+)
+SELECT
+    trust_id,
+    reporting_date,
+    'All operational staff',
+
+    establishment_fte,
+
+    ROUND(
+        establishment_fte *
+        CASE trust_code
+            WHEN 'WGH001' THEN 0.91
+            WHEN 'NRT002' THEN 0.90
+            ELSE 0.93
+        END,
+        2
+    ),
+
+    ROUND(
+        establishment_fte *
+        CASE
+            WHEN day_number BETWEEN 1 AND 7 THEN 0.035
+            WHEN day_number BETWEEN 8 AND 14 THEN 0.050
+            WHEN day_number BETWEEN 15 AND 22 THEN 0.070
+            ELSE 0.085
+        END
+        +
+        MOD(day_number * 3, 5),
+        2
+    ),
+
+    ROUND(
+        establishment_fte *
+        CASE
+            WHEN day_number BETWEEN 1 AND 7 THEN 0.020
+            WHEN day_number BETWEEN 8 AND 14 THEN 0.030
+            WHEN day_number BETWEEN 15 AND 22 THEN 0.050
+            ELSE 0.070
+        END,
+        2
+    ),
+
+    ROUND(
+        establishment_fte *
+        CASE
+            WHEN day_number BETWEEN 1 AND 14 THEN 0.015
+            ELSE 0.025
+        END,
+        2
+    ),
+
+    CASE trust_code
+        WHEN 'WGH001' THEN
+            CASE
+                WHEN day_number BETWEEN 1 AND 7 THEN 5
+                WHEN day_number BETWEEN 8 AND 14 THEN 11
+                WHEN day_number BETWEEN 15 AND 22 THEN 19
+                ELSE 28
+            END
+        WHEN 'NRT002' THEN
+            CASE
+                WHEN day_number BETWEEN 1 AND 7 THEN 4
+                WHEN day_number BETWEEN 8 AND 14 THEN 9
+                WHEN day_number BETWEEN 15 AND 22 THEN 16
+                ELSE 23
+            END
+        ELSE
+            CASE
+                WHEN day_number BETWEEN 1 AND 7 THEN 2
+                WHEN day_number BETWEEN 8 AND 14 THEN 5
+                WHEN day_number BETWEEN 15 AND 22 THEN 8
+                ELSE 12
+            END
+    END
+    + MOD(day_number, 4),
+
+    'synthetic_seed_v1',
+
+    'WFR-' || trust_code || '-' ||
+    TO_CHAR(reporting_date, 'YYYYMMDD'),
+
+    '11111111-1111-4111-8111-111111111111',
+
+    'valid'
+FROM generated_records;
+
+
 
 -- COMMIT will be added after all synthetic data sections are complete.
