@@ -798,6 +798,160 @@ VALUES
     'valid'
 );
 
+-- ============================================================
+-- 5. WEATHER METRICS
+-- Expected rows: 90
+-- Grain: one observed weather record per Trust and reporting date
+-- ============================================================
 
+WITH reporting_dates AS (
+    SELECT generate_series(
+        DATE '2026-01-01',
+        DATE '2026-01-30',
+        INTERVAL '1 day'
+    )::DATE AS reporting_date
+),
+trust_profiles AS (
+    SELECT
+        trust_id,
+        trust_code,
+        CASE trust_code
+            WHEN 'WGH001' THEN 1.5
+            WHEN 'NRT002' THEN -0.5
+            WHEN 'SCT003' THEN 3.0
+        END::NUMERIC AS regional_temperature_adjustment
+    FROM operational.trusts
+    WHERE trust_code IN ('WGH001', 'NRT002', 'SCT003')
+),
+generated_records AS (
+    SELECT
+        tp.trust_id,
+        tp.trust_code,
+        tp.regional_temperature_adjustment,
+        rd.reporting_date,
+        EXTRACT(DAY FROM rd.reporting_date)::INTEGER AS day_number
+    FROM trust_profiles AS tp
+    CROSS JOIN reporting_dates AS rd
+)
+INSERT INTO operational.weather_metrics (
+    trust_id,
+    reporting_date,
+    observation_type,
+    forecast_generated_at,
+    minimum_temperature_c,
+    maximum_temperature_c,
+    precipitation_mm,
+    snowfall_cm,
+    maximum_wind_speed_mph,
+    weather_warning_level,
+    weather_warning_type,
+    source_system,
+    source_record_id,
+    load_batch_id,
+    data_quality_status
+)
+SELECT
+    trust_id,
+    reporting_date,
+    'observed',
+    NULL,
+
+    ROUND(
+        (
+            CASE
+                WHEN day_number BETWEEN 1 AND 7 THEN -3.0
+                WHEN day_number BETWEEN 8 AND 14 THEN 0.5
+                WHEN day_number BETWEEN 15 AND 22 THEN -1.5
+                ELSE 2.0
+            END
+            + regional_temperature_adjustment
+            + (MOD(day_number * 3, 5) * 0.4)
+        )::NUMERIC,
+        1
+    ),
+
+    ROUND(
+        (
+            CASE
+                WHEN day_number BETWEEN 1 AND 7 THEN 3.0
+                WHEN day_number BETWEEN 8 AND 14 THEN 6.0
+                WHEN day_number BETWEEN 15 AND 22 THEN 4.0
+                ELSE 8.0
+            END
+            + regional_temperature_adjustment
+            + (MOD(day_number * 2, 6) * 0.5)
+        )::NUMERIC,
+        1
+    ),
+
+    ROUND(
+        (
+            CASE
+                WHEN day_number IN (4, 5, 11, 12, 18, 19, 25, 26)
+                    THEN 12.0
+                WHEN MOD(day_number, 4) = 0
+                    THEN 5.5
+                ELSE 1.2
+            END
+            +
+            CASE trust_code
+                WHEN 'NRT002' THEN 2.0
+                WHEN 'SCT003' THEN 1.0
+                ELSE 0.0
+            END
+        )::NUMERIC,
+        1
+    ),
+
+    ROUND(
+        (
+            CASE
+                WHEN trust_code = 'NRT002'
+                     AND day_number IN (3, 4, 12, 13, 19)
+                    THEN 4.5
+                WHEN trust_code = 'WGH001'
+                     AND day_number IN (4, 12, 19)
+                    THEN 1.5
+                ELSE 0.0
+            END
+        )::NUMERIC,
+        1
+    ),
+
+    CASE
+        WHEN day_number IN (5, 12, 19, 26) THEN 48
+        WHEN day_number IN (4, 11, 18, 25) THEN 36
+        ELSE 18 + MOD(day_number * 3, 12)
+    END,
+
+    CASE
+        WHEN day_number IN (12, 19)
+             AND trust_code = 'NRT002'
+            THEN 'amber'
+        WHEN day_number IN (4, 5, 11, 18, 25, 26)
+            THEN 'yellow'
+        ELSE 'none'
+    END,
+
+    CASE
+        WHEN day_number IN (12, 19)
+             AND trust_code = 'NRT002'
+            THEN 'snow and ice'
+        WHEN day_number IN (4, 11, 18, 25)
+            THEN 'ice'
+        WHEN day_number IN (5, 26)
+            THEN 'wind'
+        ELSE NULL
+    END,
+
+    'synthetic_seed_v1',
+
+    'WTH-' || trust_code || '-' ||
+    TO_CHAR(reporting_date, 'YYYYMMDD') || '-OBS',
+
+    '11111111-1111-4111-8111-111111111111',
+
+    'valid'
+FROM generated_records;
 
 -- COMMIT will be added after all synthetic data sections are complete.
