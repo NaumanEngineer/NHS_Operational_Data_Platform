@@ -2,16 +2,52 @@
 -- Synthetic sample data seed script
 --
 -- All organisations and operational values in this file are fictional.
--- The data is intended only for learning, testing and portfolio demonstration.
+-- This dataset is intended only for learning, testing, and portfolio use.
 -- It must not be interpreted as real NHS performance evidence.
 --
 -- Reporting period: 2026-01-01 to 2026-01-30
--- Expected operational grain: one row per Trust per reporting date
--- Expected load batch: 11111111-1111-4111-8111-111111111111
+-- Load batch ID: 11111111-1111-4111-8111-111111111111
+--
+-- Expected rows:
+-- trusts: 3
+-- daily_operational_metrics: 90
+-- workforce_metrics: 90
+-- incidents: 24
+-- weather_metrics: 90
+-- opel_assessments: 90
 --
 -- Run while connected to nhs_operations_test.
 
 BEGIN;
+
+-- ============================================================
+-- 0. REMOVE A PREVIOUS COPY OF THIS SYNTHETIC BATCH
+-- Child tables must be cleared before the parent Trust table.
+-- ============================================================
+
+DELETE FROM operational.opel_assessments
+WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+DELETE FROM operational.weather_metrics
+WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+DELETE FROM operational.incidents
+WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+DELETE FROM operational.workforce_metrics
+WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+DELETE FROM operational.daily_operational_metrics
+WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+DELETE FROM operational.trusts
+WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+
+-- ============================================================
+-- 1. FICTIONAL TRUST REFERENCE DATA
+-- Expected rows: 3
+-- ============================================================
 
 INSERT INTO operational.trusts (
     trust_code,
@@ -59,10 +95,11 @@ VALUES
     'valid'
 );
 
+
 -- ============================================================
 -- 2. DAILY OPERATIONAL METRICS
 -- Expected rows: 90
--- Grain: one row per Trust per reporting date
+-- Grain: one row per Trust and reporting date
 -- ============================================================
 
 WITH reporting_dates AS (
@@ -76,21 +113,25 @@ trust_profiles AS (
     SELECT
         trust_id,
         trust_code,
+
         CASE trust_code
             WHEN 'WGH001' THEN 520
             WHEN 'NRT002' THEN 430
             WHEN 'SCT003' THEN 220
         END AS base_general_beds,
+
         CASE trust_code
             WHEN 'WGH001' THEN 34
             WHEN 'NRT002' THEN 28
             WHEN 'SCT003' THEN 12
-        END AS base_critical_care_beds,
+        END AS base_critical_beds,
+
         CASE trust_code
             WHEN 'WGH001' THEN 330
             WHEN 'NRT002' THEN 270
             WHEN 'SCT003' THEN 95
         END AS base_ae_attendances
+
     FROM operational.trusts
     WHERE trust_code IN ('WGH001', 'NRT002', 'SCT003')
 ),
@@ -98,13 +139,33 @@ generated_records AS (
     SELECT
         tp.trust_id,
         tp.trust_code,
-        rd.reporting_date,
-        EXTRACT(DAY FROM rd.reporting_date)::INTEGER AS day_number,
         tp.base_general_beds,
-        tp.base_critical_care_beds,
-        tp.base_ae_attendances
+        tp.base_critical_beds,
+        tp.base_ae_attendances,
+        rd.reporting_date,
+        EXTRACT(DAY FROM rd.reporting_date)::INTEGER AS day_number
     FROM trust_profiles AS tp
     CROSS JOIN reporting_dates AS rd
+),
+calculated_activity AS (
+    SELECT
+        trust_id,
+        trust_code,
+        reporting_date,
+        day_number,
+        base_general_beds,
+        base_critical_beds,
+
+        base_ae_attendances
+        + CASE
+            WHEN day_number BETWEEN 1 AND 7 THEN 0
+            WHEN day_number BETWEEN 8 AND 14 THEN 35
+            WHEN day_number BETWEEN 15 AND 22 THEN 55
+            ELSE 75
+          END
+        + MOD(day_number * 11, 25) AS calculated_ae_attendances
+
+    FROM generated_records
 )
 INSERT INTO operational.daily_operational_metrics (
     trust_id,
@@ -150,12 +211,12 @@ SELECT
         )::INTEGER
     ),
 
-    base_critical_care_beds,
+    base_critical_beds,
 
     LEAST(
-        base_critical_care_beds,
+        base_critical_beds,
         ROUND(
-            base_critical_care_beds *
+            base_critical_beds *
             CASE
                 WHEN day_number BETWEEN 1 AND 10 THEN 0.72
                 WHEN day_number BETWEEN 11 AND 20 THEN 0.84
@@ -164,27 +225,10 @@ SELECT
         )::INTEGER
     ),
 
-    base_ae_attendances
-    + CASE
-        WHEN day_number BETWEEN 8 AND 14 THEN 35
-        WHEN day_number BETWEEN 15 AND 22 THEN 55
-        WHEN day_number BETWEEN 23 AND 30 THEN 75
-        ELSE 0
-      END
-    + MOD(day_number * 11, 25),
+    calculated_ae_attendances,
 
     ROUND(
-        (
-            base_ae_attendances
-            + CASE
-                WHEN day_number BETWEEN 8 AND 14 THEN 35
-                WHEN day_number BETWEEN 15 AND 22 THEN 55
-                WHEN day_number BETWEEN 23 AND 30 THEN 75
-                ELSE 0
-              END
-            + MOD(day_number * 11, 25)
-        )
-        *
+        calculated_ae_attendances *
         CASE
             WHEN day_number BETWEEN 1 AND 7 THEN 0.08
             WHEN day_number BETWEEN 8 AND 14 THEN 0.13
@@ -232,7 +276,8 @@ SELECT
         ELSE 69
     END
     + CASE
-        WHEN day_number BETWEEN 1 AND 14 THEN MOD(day_number * 4, 15)
+        WHEN day_number BETWEEN 1 AND 14
+            THEN MOD(day_number * 4, 15)
         ELSE MOD(day_number * 2, 9)
       END,
 
@@ -244,12 +289,14 @@ SELECT
     '11111111-1111-4111-8111-111111111111',
 
     'valid'
-FROM generated_records;
+
+FROM calculated_activity;
+
 
 -- ============================================================
 -- 3. WORKFORCE METRICS
 -- Expected rows: 90
--- Grain: one row per Trust, reporting date, and staff group
+-- Grain: one row per Trust, date, and staff group
 -- ============================================================
 
 WITH reporting_dates AS (
@@ -263,11 +310,13 @@ trust_profiles AS (
     SELECT
         trust_id,
         trust_code,
+
         CASE trust_code
             WHEN 'WGH001' THEN 1180.00
             WHEN 'NRT002' THEN 940.00
             WHEN 'SCT003' THEN 430.00
         END::NUMERIC(10,2) AS establishment_fte
+
     FROM operational.trusts
     WHERE trust_code IN ('WGH001', 'NRT002', 'SCT003')
 ),
@@ -278,6 +327,7 @@ generated_records AS (
         tp.establishment_fte,
         rd.reporting_date,
         EXTRACT(DAY FROM rd.reporting_date)::INTEGER AS day_number
+
     FROM trust_profiles AS tp
     CROSS JOIN reporting_dates AS rd
 )
@@ -321,8 +371,7 @@ SELECT
             WHEN day_number BETWEEN 15 AND 22 THEN 0.070
             ELSE 0.085
         END
-        +
-        MOD(day_number * 3, 5),
+        + MOD(day_number * 3, 5),
         2
     ),
 
@@ -354,6 +403,7 @@ SELECT
                 WHEN day_number BETWEEN 15 AND 22 THEN 19
                 ELSE 28
             END
+
         WHEN 'NRT002' THEN
             CASE
                 WHEN day_number BETWEEN 1 AND 7 THEN 4
@@ -361,6 +411,7 @@ SELECT
                 WHEN day_number BETWEEN 15 AND 22 THEN 16
                 ELSE 23
             END
+
         ELSE
             CASE
                 WHEN day_number BETWEEN 1 AND 7 THEN 2
@@ -379,14 +430,84 @@ SELECT
     '11111111-1111-4111-8111-111111111111',
 
     'valid'
+
 FROM generated_records;
 
+
 -- ============================================================
--- 4. SYNTHETIC INCIDENTS
+-- 4. SYNTHETIC OPERATIONAL INCIDENTS
 -- Expected rows: 24
--- Grain: one row per fictional operational incident
+-- Grain: one row per incident
 -- ============================================================
 
+WITH incident_numbers AS (
+    SELECT generate_series(1, 24) AS incident_number
+),
+incident_profiles AS (
+    SELECT
+        incident_number,
+
+        CASE
+            WHEN incident_number BETWEEN 1 AND 10 THEN 'WGH001'
+            WHEN incident_number BETWEEN 11 AND 18 THEN 'NRT002'
+            ELSE 'SCT003'
+        END AS trust_code,
+
+        CASE
+            WHEN incident_number BETWEEN 1 AND 10
+                THEN incident_number
+            WHEN incident_number BETWEEN 11 AND 18
+                THEN incident_number - 10
+            ELSE incident_number - 18
+        END AS trust_incident_number,
+
+        CASE MOD(incident_number - 1, 8)
+            WHEN 0 THEN 'staffing disruption'
+            WHEN 1 THEN 'temporary bed closure'
+            WHEN 2 THEN 'IT outage'
+            WHEN 3 THEN 'heating failure'
+            WHEN 4 THEN 'infection-control pressure'
+            WHEN 5 THEN 'ambulance access pressure'
+            WHEN 6 THEN 'medical-equipment fault'
+            ELSE 'transport disruption'
+        END AS incident_type,
+
+        CASE MOD(incident_number - 1, 4)
+            WHEN 0 THEN 'low'
+            WHEN 1 THEN 'moderate'
+            WHEN 2 THEN 'high'
+            ELSE 'critical'
+        END AS severity_level,
+
+        CASE
+            WHEN incident_number IN (5, 9, 15, 22)
+                THEN 'monitoring'
+            WHEN incident_number IN (10, 17, 24)
+                THEN 'open'
+            ELSE 'resolved'
+        END AS incident_status
+
+    FROM incident_numbers
+),
+prepared_incidents AS (
+    SELECT
+        ip.*,
+        t.trust_id,
+
+        MAKE_TIMESTAMPTZ(
+            2026,
+            1,
+            incident_number,
+            8,
+            0,
+            0,
+            'UTC'
+        ) AS incident_started_at
+
+    FROM incident_profiles AS ip
+    JOIN operational.trusts AS t
+        ON t.trust_code = ip.trust_code
+)
 INSERT INTO operational.incidents (
     trust_id,
     incident_reference,
@@ -403,405 +524,79 @@ INSERT INTO operational.incidents (
     load_batch_id,
     data_quality_status
 )
-VALUES
+SELECT
+    trust_id,
 
--- Westborough General Hospital: 10 incidents
+    'INC-' || trust_code || '-' ||
+    LPAD(trust_incident_number::TEXT, 3, '0'),
 
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-001',
-    'staffing disruption',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-03 06:30:00+00',
-    TIMESTAMPTZ '2026-01-03 07:00:00+00',
-    TIMESTAMPTZ '2026-01-03 15:00:00+00',
-    'Emergency Department',
-    'Reduced staffing capacity during the morning shift.',
-    'synthetic_seed_v1',
-    'INC-WGH-001',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-002',
-    'temporary bed closure',
-    'high',
-    'resolved',
-    TIMESTAMPTZ '2026-01-06 09:00:00+00',
-    TIMESTAMPTZ '2026-01-06 09:20:00+00',
-    TIMESTAMPTZ '2026-01-07 14:00:00+00',
-    'Acute Medicine',
-    'Temporary reduction in available general-bed capacity.',
-    'synthetic_seed_v1',
-    'INC-WGH-002',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-003',
-    'IT outage',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-09 11:15:00+00',
-    TIMESTAMPTZ '2026-01-09 11:20:00+00',
-    TIMESTAMPTZ '2026-01-09 13:00:00+00',
-    'Patient Administration',
-    'Temporary disruption to operational reporting systems.',
-    'synthetic_seed_v1',
-    'INC-WGH-003',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-004',
-    'heating failure',
-    'high',
-    'resolved',
-    TIMESTAMPTZ '2026-01-11 04:30:00+00',
-    TIMESTAMPTZ '2026-01-11 04:45:00+00',
-    TIMESTAMPTZ '2026-01-11 18:00:00+00',
-    'Inpatient Services',
-    'Heating disruption affected part of the inpatient estate.',
-    'synthetic_seed_v1',
-    'INC-WGH-004',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-005',
-    'infection-control pressure',
-    'high',
-    'monitoring',
-    TIMESTAMPTZ '2026-01-14 08:00:00+00',
-    TIMESTAMPTZ '2026-01-14 08:15:00+00',
-    NULL,
-    'General Medicine',
-    'Cohorting requirements reduced operational flexibility.',
-    'synthetic_seed_v1',
-    'INC-WGH-005',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-006',
-    'ambulance access pressure',
-    'high',
-    'resolved',
-    TIMESTAMPTZ '2026-01-17 15:00:00+00',
-    TIMESTAMPTZ '2026-01-17 15:10:00+00',
-    TIMESTAMPTZ '2026-01-17 23:30:00+00',
-    'Emergency Department',
-    'Ambulance arrivals exceeded planned receiving capacity.',
-    'synthetic_seed_v1',
-    'INC-WGH-006',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-007',
-    'medical-equipment fault',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-20 10:00:00+00',
-    TIMESTAMPTZ '2026-01-20 10:10:00+00',
-    TIMESTAMPTZ '2026-01-20 16:30:00+00',
-    'Critical Care',
-    'One item of equipment was temporarily unavailable.',
-    'synthetic_seed_v1',
-    'INC-WGH-007',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-008',
-    'transport disruption',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-23 06:00:00+00',
-    TIMESTAMPTZ '2026-01-23 06:20:00+00',
-    TIMESTAMPTZ '2026-01-23 12:00:00+00',
-    'Workforce Operations',
-    'Staff travel disruption affected shift start times.',
-    'synthetic_seed_v1',
-    'INC-WGH-008',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-009',
-    'temporary bed closure',
-    'critical',
-    'monitoring',
-    TIMESTAMPTZ '2026-01-26 09:00:00+00',
-    TIMESTAMPTZ '2026-01-26 09:05:00+00',
-    NULL,
-    'Acute Medicine',
-    'A significant bed-capacity reduction increased escalation risk.',
-    'synthetic_seed_v1',
-    'INC-WGH-009',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'WGH001'),
-    'INC-WGH-010',
-    'staffing disruption',
-    'high',
-    'open',
-    TIMESTAMPTZ '2026-01-29 05:30:00+00',
-    TIMESTAMPTZ '2026-01-29 05:45:00+00',
-    NULL,
-    'Critical Care',
-    'Unplanned staffing gaps required operational escalation.',
-    'synthetic_seed_v1',
-    'INC-WGH-010',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
+    incident_type,
+    severity_level,
+    incident_status,
 
--- North Riverside NHS Trust: 8 incidents
+    incident_started_at,
 
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-001',
-    'IT outage',
-    'low',
-    'resolved',
-    TIMESTAMPTZ '2026-01-04 13:00:00+00',
-    TIMESTAMPTZ '2026-01-04 13:10:00+00',
-    TIMESTAMPTZ '2026-01-04 14:00:00+00',
-    'Operational Reporting',
-    'Short interruption to local reporting access.',
-    'synthetic_seed_v1',
-    'INC-NRT-001',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-002',
-    'staffing disruption',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-08 06:00:00+00',
-    TIMESTAMPTZ '2026-01-08 06:15:00+00',
-    TIMESTAMPTZ '2026-01-08 18:00:00+00',
-    'Emergency Department',
-    'Reduced shift coverage increased operational pressure.',
-    'synthetic_seed_v1',
-    'INC-NRT-002',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-003',
-    'severe-weather impact',
-    'high',
-    'resolved',
-    TIMESTAMPTZ '2026-01-12 03:00:00+00',
-    TIMESTAMPTZ '2026-01-12 03:20:00+00',
-    TIMESTAMPTZ '2026-01-13 10:00:00+00',
-    'Trust-wide',
-    'Cold weather affected travel, staffing, and demand.',
-    'synthetic_seed_v1',
-    'INC-NRT-003',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-004',
-    'temporary bed closure',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-15 10:30:00+00',
-    TIMESTAMPTZ '2026-01-15 10:45:00+00',
-    TIMESTAMPTZ '2026-01-16 09:00:00+00',
-    'General Medicine',
-    'A small number of beds were temporarily unavailable.',
-    'synthetic_seed_v1',
-    'INC-NRT-004',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-005',
-    'ambulance access pressure',
-    'high',
-    'monitoring',
-    TIMESTAMPTZ '2026-01-18 14:00:00+00',
-    TIMESTAMPTZ '2026-01-18 14:10:00+00',
-    NULL,
-    'Emergency Department',
-    'Sustained arrival pressure required continued monitoring.',
-    'synthetic_seed_v1',
-    'INC-NRT-005',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-006',
-    'heating failure',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-21 07:00:00+00',
-    TIMESTAMPTZ '2026-01-21 07:05:00+00',
-    TIMESTAMPTZ '2026-01-21 13:00:00+00',
-    'Outpatients',
-    'Heating disruption affected one outpatient area.',
-    'synthetic_seed_v1',
-    'INC-NRT-006',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-007',
-    'infection-control pressure',
-    'high',
-    'open',
-    TIMESTAMPTZ '2026-01-25 08:00:00+00',
-    TIMESTAMPTZ '2026-01-25 08:15:00+00',
-    NULL,
-    'Inpatient Services',
-    'Infection-control measures reduced available capacity.',
-    'synthetic_seed_v1',
-    'INC-NRT-007',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'NRT002'),
-    'INC-NRT-008',
-    'transport disruption',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-28 05:00:00+00',
-    TIMESTAMPTZ '2026-01-28 05:20:00+00',
-    TIMESTAMPTZ '2026-01-28 11:30:00+00',
-    'Workforce Operations',
-    'Local transport disruption affected shift attendance.',
-    'synthetic_seed_v1',
-    'INC-NRT-008',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
+    incident_started_at + INTERVAL '20 minutes',
 
--- South County Community Trust: 6 incidents
+    CASE
+        WHEN incident_status = 'resolved'
+            THEN incident_started_at + INTERVAL '8 hours'
+        ELSE NULL
+    END,
 
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'SCT003'),
-    'INC-SCT-001',
-    'staffing disruption',
-    'low',
-    'resolved',
-    TIMESTAMPTZ '2026-01-05 07:00:00+00',
-    TIMESTAMPTZ '2026-01-05 07:15:00+00',
-    TIMESTAMPTZ '2026-01-05 14:00:00+00',
-    'Community Services',
-    'Reduced staffing affected selected community visits.',
+    CASE incident_type
+        WHEN 'staffing disruption'
+            THEN 'Workforce Operations'
+        WHEN 'temporary bed closure'
+            THEN 'Acute Medicine'
+        WHEN 'IT outage'
+            THEN 'Operational Reporting'
+        WHEN 'heating failure'
+            THEN 'Estates and Facilities'
+        WHEN 'infection-control pressure'
+            THEN 'Inpatient Services'
+        WHEN 'ambulance access pressure'
+            THEN 'Emergency Department'
+        WHEN 'medical-equipment fault'
+            THEN 'Clinical Operations'
+        ELSE 'Trust-wide Operations'
+    END,
+
+    CASE incident_type
+        WHEN 'staffing disruption'
+            THEN 'Synthetic staffing gaps reduced planned service capacity.'
+        WHEN 'temporary bed closure'
+            THEN 'Synthetic bed closures reduced available operational capacity.'
+        WHEN 'IT outage'
+            THEN 'Synthetic system disruption affected operational reporting.'
+        WHEN 'heating failure'
+            THEN 'Synthetic estate disruption affected part of the service.'
+        WHEN 'infection-control pressure'
+            THEN 'Synthetic infection-control measures reduced operational flexibility.'
+        WHEN 'ambulance access pressure'
+            THEN 'Synthetic ambulance demand exceeded planned receiving capacity.'
+        WHEN 'medical-equipment fault'
+            THEN 'Synthetic equipment unavailability affected service delivery.'
+        ELSE
+            'Synthetic transport disruption affected workforce and service access.'
+    END,
+
     'synthetic_seed_v1',
-    'INC-SCT-001',
+
+    'INC-' || trust_code || '-' ||
+    LPAD(trust_incident_number::TEXT, 3, '0'),
+
     '11111111-1111-4111-8111-111111111111',
+
     'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'SCT003'),
-    'INC-SCT-002',
-    'transport disruption',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-10 06:30:00+00',
-    TIMESTAMPTZ '2026-01-10 06:40:00+00',
-    TIMESTAMPTZ '2026-01-10 16:00:00+00',
-    'Community Nursing',
-    'Travel disruption delayed selected community activity.',
-    'synthetic_seed_v1',
-    'INC-SCT-002',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'SCT003'),
-    'INC-SCT-003',
-    'IT outage',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-13 09:30:00+00',
-    TIMESTAMPTZ '2026-01-13 09:35:00+00',
-    TIMESTAMPTZ '2026-01-13 11:15:00+00',
-    'Community Operations',
-    'Temporary interruption to scheduling systems.',
-    'synthetic_seed_v1',
-    'INC-SCT-003',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'SCT003'),
-    'INC-SCT-004',
-    'severe-weather impact',
-    'moderate',
-    'monitoring',
-    TIMESTAMPTZ '2026-01-19 05:00:00+00',
-    TIMESTAMPTZ '2026-01-19 05:20:00+00',
-    NULL,
-    'Trust-wide',
-    'Weather conditions affected travel and community access.',
-    'synthetic_seed_v1',
-    'INC-SCT-004',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'SCT003'),
-    'INC-SCT-005',
-    'staffing disruption',
-    'moderate',
-    'resolved',
-    TIMESTAMPTZ '2026-01-24 06:00:00+00',
-    TIMESTAMPTZ '2026-01-24 06:10:00+00',
-    TIMESTAMPTZ '2026-01-24 18:00:00+00',
-    'Intermediate Care',
-    'Reduced staffing required temporary service prioritisation.',
-    'synthetic_seed_v1',
-    'INC-SCT-005',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-),
-(
-    (SELECT trust_id FROM operational.trusts WHERE trust_code = 'SCT003'),
-    'INC-SCT-006',
-    'medical-equipment fault',
-    'low',
-    'open',
-    TIMESTAMPTZ '2026-01-30 08:30:00+00',
-    TIMESTAMPTZ '2026-01-30 08:45:00+00',
-    NULL,
-    'Community Rehabilitation',
-    'One item of non-critical equipment was unavailable.',
-    'synthetic_seed_v1',
-    'INC-SCT-006',
-    '11111111-1111-4111-8111-111111111111',
-    'valid'
-);
+
+FROM prepared_incidents;
+
 
 -- ============================================================
 -- 5. WEATHER METRICS
 -- Expected rows: 90
--- Grain: one observed weather record per Trust and reporting date
+-- Grain: one observed record per Trust and reporting date
 -- ============================================================
 
 WITH reporting_dates AS (
@@ -815,11 +610,13 @@ trust_profiles AS (
     SELECT
         trust_id,
         trust_code,
+
         CASE trust_code
             WHEN 'WGH001' THEN 1.5
             WHEN 'NRT002' THEN -0.5
             WHEN 'SCT003' THEN 3.0
         END::NUMERIC AS regional_temperature_adjustment
+
     FROM operational.trusts
     WHERE trust_code IN ('WGH001', 'NRT002', 'SCT003')
 ),
@@ -830,6 +627,7 @@ generated_records AS (
         tp.regional_temperature_adjustment,
         rd.reporting_date,
         EXTRACT(DAY FROM rd.reporting_date)::INTEGER AS day_number
+
     FROM trust_profiles AS tp
     CROSS JOIN reporting_dates AS rd
 )
@@ -838,11 +636,11 @@ INSERT INTO operational.weather_metrics (
     reporting_date,
     observation_type,
     forecast_generated_at,
-    minimum_temperature_c,
-    maximum_temperature_c,
+    temperature_min_c,
+    temperature_max_c,
     precipitation_mm,
-    snowfall_cm,
-    maximum_wind_speed_mph,
+    snowfall_mm,
+    wind_speed_mph,
     weather_warning_level,
     weather_warning_type,
     source_system,
@@ -865,7 +663,7 @@ SELECT
                 ELSE 2.0
             END
             + regional_temperature_adjustment
-            + (MOD(day_number * 3, 5) * 0.4)
+            + MOD(day_number * 3, 5) * 0.4
         )::NUMERIC,
         1
     ),
@@ -879,7 +677,7 @@ SELECT
                 ELSE 8.0
             END
             + regional_temperature_adjustment
-            + (MOD(day_number * 2, 6) * 0.5)
+            + MOD(day_number * 2, 6) * 0.5
         )::NUMERIC,
         1
     ),
@@ -908,10 +706,10 @@ SELECT
             CASE
                 WHEN trust_code = 'NRT002'
                      AND day_number IN (3, 4, 12, 13, 19)
-                    THEN 4.5
+                    THEN 45.0
                 WHEN trust_code = 'WGH001'
                      AND day_number IN (4, 12, 19)
-                    THEN 1.5
+                    THEN 15.0
                 ELSE 0.0
             END
         )::NUMERIC,
@@ -928,19 +726,24 @@ SELECT
         WHEN day_number IN (12, 19)
              AND trust_code = 'NRT002'
             THEN 'amber'
+
         WHEN day_number IN (4, 5, 11, 18, 25, 26)
             THEN 'yellow'
-        ELSE 'none'
+
+        ELSE NULL
     END,
 
     CASE
         WHEN day_number IN (12, 19)
              AND trust_code = 'NRT002'
             THEN 'snow and ice'
+
         WHEN day_number IN (4, 11, 18, 25)
             THEN 'ice'
+
         WHEN day_number IN (5, 26)
             THEN 'wind'
+
         ELSE NULL
     END,
 
@@ -952,7 +755,9 @@ SELECT
     '11111111-1111-4111-8111-111111111111',
 
     'valid'
+
 FROM generated_records;
+
 
 -- ============================================================
 -- 6. OPEL ASSESSMENTS
@@ -973,8 +778,10 @@ trust_dates AS (
         t.trust_code,
         d.assessment_date,
         EXTRACT(DAY FROM d.assessment_date)::INTEGER AS day_number
+
     FROM operational.trusts AS t
     CROSS JOIN reporting_dates AS d
+
     WHERE t.trust_code IN ('WGH001', 'NRT002', 'SCT003')
 ),
 recommendations AS (
@@ -986,19 +793,22 @@ recommendations AS (
 
         CASE
             WHEN day_number BETWEEN 1 AND 7 THEN 1
+
             WHEN day_number BETWEEN 8 AND 14 THEN 2
+
             WHEN day_number BETWEEN 15 AND 22 THEN
                 CASE
                     WHEN trust_code = 'SCT003' THEN 2
                     ELSE 3
                 END
+
             ELSE
                 CASE
                     WHEN trust_code = 'WGH001' THEN 4
-                    WHEN trust_code = 'NRT002' THEN 3
                     ELSE 3
                 END
-        END AS recommended_opel_level
+        END::SMALLINT AS recommended_opel_level
+
     FROM trust_dates
 ),
 approved_decisions AS (
@@ -1010,13 +820,25 @@ approved_decisions AS (
         recommended_opel_level,
 
         CASE
-            -- Deliberate examples of human review overriding the recommendation
-            WHEN trust_code = 'WGH001' AND day_number = 18 THEN 2
-            WHEN trust_code = 'WGH001' AND day_number = 27 THEN 3
-            WHEN trust_code = 'NRT002' AND day_number = 13 THEN 3
-            WHEN trust_code = 'SCT003' AND day_number = 24 THEN 2
+            WHEN trust_code = 'WGH001'
+                 AND day_number = 18
+                THEN 2
+
+            WHEN trust_code = 'WGH001'
+                 AND day_number = 27
+                THEN 3
+
+            WHEN trust_code = 'NRT002'
+                 AND day_number = 13
+                THEN 3
+
+            WHEN trust_code = 'SCT003'
+                 AND day_number = 24
+                THEN 2
+
             ELSE recommended_opel_level
-        END AS approved_opel_level
+        END::SMALLINT AS approved_opel_level
+
     FROM recommendations
 ),
 final_assessments AS (
@@ -1031,22 +853,25 @@ final_assessments AS (
         LAG(approved_opel_level) OVER (
             PARTITION BY trust_id
             ORDER BY assessment_date
-        ) AS previous_approved_opel_level
+        )::SMALLINT AS previous_approved_opel_level
+
     FROM approved_decisions
 )
 INSERT INTO operational.opel_assessments (
     trust_id,
-    assessment_date,
     assessment_timestamp,
     recommended_opel_level,
     approved_opel_level,
     previous_approved_opel_level,
     prediction_confidence,
     assessment_method,
-    rule_version,
-    decision_rationale,
+    assessment_rationale,
+    key_pressure_factors,
+    approval_status,
+    assessed_by_role,
     reviewed_by_role,
     reviewed_at,
+    rule_version,
     source_system,
     source_record_id,
     load_batch_id,
@@ -1054,43 +879,66 @@ INSERT INTO operational.opel_assessments (
 )
 SELECT
     trust_id,
-    assessment_date,
 
-    assessment_date::TIMESTAMP
-        + TIME '10:00:00',
+    (
+        assessment_date + TIME '10:00:00'
+    ) AT TIME ZONE 'UTC',
 
     recommended_opel_level,
     approved_opel_level,
     previous_approved_opel_level,
 
     CASE recommended_opel_level
-        WHEN 1 THEN 0.91
-        WHEN 2 THEN 0.87
-        WHEN 3 THEN 0.83
-        WHEN 4 THEN 0.79
+        WHEN 1 THEN 0.9100
+        WHEN 2 THEN 0.8700
+        WHEN 3 THEN 0.8300
+        WHEN 4 THEN 0.7900
     END,
 
     'rules_based',
 
-    'opel_rules_v1.0',
-
     CASE
         WHEN approved_opel_level <> recommended_opel_level THEN
-            'Human reviewer adjusted the rules-based recommendation using synthetic contextual information.'
+            'Human reviewer adjusted the synthetic rules-based recommendation.'
+
         WHEN recommended_opel_level = 4 THEN
-            'Synthetic critical pressure across capacity, demand, workforce and operational indicators.'
+            'Synthetic critical operational pressure required system-level escalation.'
+
         WHEN recommended_opel_level = 3 THEN
-            'Synthetic significant pressure requiring enhanced operational coordination.'
+            'Synthetic significant pressure required enhanced operational coordination.'
+
         WHEN recommended_opel_level = 2 THEN
-            'Synthetic moderate pressure requiring active monitoring and management.'
+            'Synthetic moderate pressure required active monitoring.'
+
         ELSE
-            'Synthetic operational conditions remained within routine management arrangements.'
+            'Synthetic operational conditions remained within routine arrangements.'
     END,
+
+    CASE
+        WHEN recommended_opel_level = 4 THEN
+            'High bed occupancy; ambulance delays; workforce gaps; unresolved incidents'
+
+        WHEN recommended_opel_level = 3 THEN
+            'Rising occupancy; discharge pressure; workforce absence'
+
+        WHEN recommended_opel_level = 2 THEN
+            'Moderate demand; selected capacity and workforce pressure'
+
+        ELSE
+            'Routine demand and manageable operational pressure'
+    END,
+
+    'approved',
+
+    'Operational Intelligence Analyst',
 
     'Duty Operations Manager',
 
-    assessment_date::TIMESTAMP
-        + TIME '10:30:00',
+    (
+        assessment_date + TIME '10:30:00'
+    ) AT TIME ZONE 'UTC',
+
+    'opel_rules_v1.0',
 
     'synthetic_seed_v1',
 
@@ -1100,11 +948,13 @@ SELECT
     '11111111-1111-4111-8111-111111111111',
 
     'valid'
+
 FROM final_assessments;
+
 
 -- ============================================================
 -- 7. PRE-COMMIT VALIDATION
--- Confirm the expected number of rows before committing
+-- The transaction fails if expected counts are not achieved.
 -- ============================================================
 
 DO $$
@@ -1116,29 +966,41 @@ DECLARE
     weather_count INTEGER;
     opel_count INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO trust_count
+    SELECT COUNT(*)
+    INTO trust_count
     FROM operational.trusts
-    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+    WHERE load_batch_id =
+        '11111111-1111-4111-8111-111111111111';
 
-    SELECT COUNT(*) INTO daily_count
+    SELECT COUNT(*)
+    INTO daily_count
     FROM operational.daily_operational_metrics
-    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+    WHERE load_batch_id =
+        '11111111-1111-4111-8111-111111111111';
 
-    SELECT COUNT(*) INTO workforce_count
+    SELECT COUNT(*)
+    INTO workforce_count
     FROM operational.workforce_metrics
-    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+    WHERE load_batch_id =
+        '11111111-1111-4111-8111-111111111111';
 
-    SELECT COUNT(*) INTO incident_count
+    SELECT COUNT(*)
+    INTO incident_count
     FROM operational.incidents
-    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+    WHERE load_batch_id =
+        '11111111-1111-4111-8111-111111111111';
 
-    SELECT COUNT(*) INTO weather_count
+    SELECT COUNT(*)
+    INTO weather_count
     FROM operational.weather_metrics
-    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+    WHERE load_batch_id =
+        '11111111-1111-4111-8111-111111111111';
 
-    SELECT COUNT(*) INTO opel_count
+    SELECT COUNT(*)
+    INTO opel_count
     FROM operational.opel_assessments
-    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+    WHERE load_batch_id =
+        '11111111-1111-4111-8111-111111111111';
 
     IF trust_count <> 3 THEN
         RAISE EXCEPTION
@@ -1148,7 +1010,7 @@ BEGIN
 
     IF daily_count <> 90 THEN
         RAISE EXCEPTION
-            'Validation failed: expected 90 daily operational rows, found %',
+            'Validation failed: expected 90 daily rows, found %',
             daily_count;
     END IF;
 
@@ -1190,3 +1052,58 @@ $$;
 COMMIT;
 
 
+-- ============================================================
+-- 8. POST-LOAD SUMMARY
+-- ============================================================
+
+SELECT
+    'trusts' AS table_name,
+    COUNT(*) AS record_count
+FROM operational.trusts
+WHERE load_batch_id =
+    '11111111-1111-4111-8111-111111111111'
+
+UNION ALL
+
+SELECT
+    'daily_operational_metrics',
+    COUNT(*)
+FROM operational.daily_operational_metrics
+WHERE load_batch_id =
+    '11111111-1111-4111-8111-111111111111'
+
+UNION ALL
+
+SELECT
+    'workforce_metrics',
+    COUNT(*)
+FROM operational.workforce_metrics
+WHERE load_batch_id =
+    '11111111-1111-4111-8111-111111111111'
+
+UNION ALL
+
+SELECT
+    'incidents',
+    COUNT(*)
+FROM operational.incidents
+WHERE load_batch_id =
+    '11111111-1111-4111-8111-111111111111'
+
+UNION ALL
+
+SELECT
+    'weather_metrics',
+    COUNT(*)
+FROM operational.weather_metrics
+WHERE load_batch_id =
+    '11111111-1111-4111-8111-111111111111'
+
+UNION ALL
+
+SELECT
+    'opel_assessments',
+    COUNT(*)
+FROM operational.opel_assessments
+WHERE load_batch_id =
+    '11111111-1111-4111-8111-111111111111';
