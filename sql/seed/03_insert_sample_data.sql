@@ -1102,4 +1102,91 @@ SELECT
     'valid'
 FROM final_assessments;
 
--- COMMIT will be added after all synthetic data sections are complete.
+-- ============================================================
+-- 7. PRE-COMMIT VALIDATION
+-- Confirm the expected number of rows before committing
+-- ============================================================
+
+DO $$
+DECLARE
+    trust_count INTEGER;
+    daily_count INTEGER;
+    workforce_count INTEGER;
+    incident_count INTEGER;
+    weather_count INTEGER;
+    opel_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO trust_count
+    FROM operational.trusts
+    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+    SELECT COUNT(*) INTO daily_count
+    FROM operational.daily_operational_metrics
+    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+    SELECT COUNT(*) INTO workforce_count
+    FROM operational.workforce_metrics
+    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+    SELECT COUNT(*) INTO incident_count
+    FROM operational.incidents
+    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+    SELECT COUNT(*) INTO weather_count
+    FROM operational.weather_metrics
+    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+    SELECT COUNT(*) INTO opel_count
+    FROM operational.opel_assessments
+    WHERE load_batch_id = '11111111-1111-4111-8111-111111111111';
+
+    IF trust_count <> 3 THEN
+        RAISE EXCEPTION
+            'Validation failed: expected 3 Trust rows, found %',
+            trust_count;
+    END IF;
+
+    IF daily_count <> 90 THEN
+        RAISE EXCEPTION
+            'Validation failed: expected 90 daily operational rows, found %',
+            daily_count;
+    END IF;
+
+    IF workforce_count <> 90 THEN
+        RAISE EXCEPTION
+            'Validation failed: expected 90 workforce rows, found %',
+            workforce_count;
+    END IF;
+
+    IF incident_count <> 24 THEN
+        RAISE EXCEPTION
+            'Validation failed: expected 24 incident rows, found %',
+            incident_count;
+    END IF;
+
+    IF weather_count <> 90 THEN
+        RAISE EXCEPTION
+            'Validation failed: expected 90 weather rows, found %',
+            weather_count;
+    END IF;
+
+    IF opel_count <> 90 THEN
+        RAISE EXCEPTION
+            'Validation failed: expected 90 OPEL rows, found %',
+            opel_count;
+    END IF;
+
+    RAISE NOTICE
+        'Validation passed: trusts %, daily %, workforce %, incidents %, weather %, OPEL %',
+        trust_count,
+        daily_count,
+        workforce_count,
+        incident_count,
+        weather_count,
+        opel_count;
+END
+$$;
+
+COMMIT;
+
+
