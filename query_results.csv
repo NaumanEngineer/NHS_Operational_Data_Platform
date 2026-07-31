@@ -1,0 +1,91 @@
+"trust_code","trust_name","reporting_date","general_bed_occupancy_pct","critical_care_occupancy_pct","ae_attendances","four_hour_breach_pct","ambulance_handover_delay_pct","patients_ready_for_discharge","net_admissions","workforce_absence_pct","agency_fte","bank_fte","unfilled_shifts","temperature_min_c","temperature_max_c","weather_warning_level","approved_opel_level","operational_pressure_status","human_override_indicator"
+"NRT002","North Riverside NHS Trust","2026-01-01","85.12","71.43",281,"7.83","11.70",32,8,"3.82","18.80","14.10","5","-2.30","3.50",NULL,1,"Routine pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-02","86.28","71.43",292,"7.88","14.29",33,9,"3.61","18.80","14.10","6","-3.10","4.50",NULL,1,"Routine pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-03","84.65","71.43",278,"7.91","9.80",34,10,"3.93","18.80","14.10","7","-1.90","2.50",NULL,1,"Routine pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-04","85.81","71.43",289,"7.96","12.26",35,8,"3.71","18.80","14.10","4","-2.70","3.50","yellow",1,"Routine pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-05","84.19","71.43",275,"8.00","9.78",36,9,"3.50","18.80","14.10","5","-3.50","4.50","yellow",1,"Routine pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-06","85.35","71.43",286,"8.04","12.50",31,10,"3.82","18.80","14.10","6","-2.30","2.50",NULL,1,"Routine pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-07","86.51","71.43",272,"8.09","8.00",32,11,"3.61","18.80","14.10","7","-3.10","3.50",NULL,1,"Routine pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-08","90.00","71.43",318,"12.89","19.23",33,9,"5.43","28.20","14.10","9","1.60","7.50",NULL,2,"Moderate pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-09","91.16","71.43",329,"13.07","25.56",34,10,"5.21","28.20","14.10","10","0.80","5.50",NULL,2,"Moderate pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-10","89.53","71.43",315,"13.02","20.21",35,11,"5.00","28.20","14.10","11","0.00","6.50",NULL,2,"Moderate pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-11","90.70","85.71",326,"12.88","22.45",36,-6,"5.32","28.20","14.10","12","1.20","7.50","yellow",2,"Moderate pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-12","89.07","85.71",312,"13.14","17.65",31,10,"5.11","28.20","14.10","9","0.40","5.50","amber",2,"Moderate pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-13","90.23","85.71",323,"13.00","19.81",32,11,"5.43","28.20","14.10","10","1.60","6.50",NULL,3,"Significant pressure",True
+"NRT002","North Riverside NHS Trust","2026-01-14","91.40","85.71",309,"12.94","18.48",33,12,"5.21","28.20","14.10","11","0.80","7.50",NULL,2,"Moderate pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-15","93.72","85.71",340,"22.06","33.33",46,7,"7.00","47.00","23.50","19","-2.00","3.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-16","94.88","85.71",326,"22.09","35.00",47,10,"7.32","47.00","23.50","16","-0.80","4.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-17","93.26","85.71",337,"21.96","29.81",48,13,"7.11","47.00","23.50","17","-1.60","5.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-18","94.42","85.71",348,"22.13","37.78",43,7,"7.43","47.00","23.50","18","-0.40","3.50","yellow",3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-19","95.58","85.71",334,"21.86","31.91",44,10,"7.21","47.00","23.50","19","-1.20","4.50","amber",3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-20","93.95","85.71",345,"22.03","33.67",45,13,"7.00","47.00","23.50","16","-2.00","5.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-21","95.12","92.86",331,"22.05","28.43",46,16,"7.32","47.00","23.50","17","-0.80","3.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-22","93.49","92.86",342,"21.93","30.19",47,1,"7.11","47.00","23.50","18","-1.60","4.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-23","97.67","92.86",348,"31.03","54.35",48,13,"8.93","65.80","23.50","26","3.10","9.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-24","96.05","92.86",359,"30.92","47.92",43,16,"8.71","65.80","23.50","23","2.30","7.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-25","97.21","92.86",345,"31.01","49.00",44,19,"8.50","65.80","23.50","24","1.50","8.50","yellow",3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-26","98.37","92.86",356,"30.90","43.27",45,4,"8.82","65.80","23.50","25","2.70","9.50","yellow",3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-27","96.74","92.86",367,"31.06","53.33",46,16,"8.61","65.80","23.50","26","1.90","7.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-28","97.91","92.86",353,"30.88","46.81",47,19,"8.93","65.80","23.50","23","3.10","8.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-29","96.28","92.86",364,"31.04","47.96",48,4,"8.71","65.80","23.50","24","2.30","9.50",NULL,3,"Significant pressure",False
+"NRT002","North Riverside NHS Trust","2026-01-30","97.44","92.86",350,"31.14","49.02",43,7,"8.50","65.80","23.50","25","1.50","7.50",NULL,3,"Significant pressure",False
+"SCT003","South County Community Trust","2026-01-01","85.45","75.00",106,"7.55","28.21",19,4,"4.20","8.60","6.45","3","1.20","7.00",NULL,1,"Routine pressure",False
+"SCT003","South County Community Trust","2026-01-02","86.82","75.00",117,"7.69","32.56",20,5,"3.73","8.60","6.45","4","0.40","8.00",NULL,1,"Routine pressure",False
+"SCT003","South County Community Trust","2026-01-03","84.55","75.00",103,"7.77","21.28",21,6,"4.43","8.60","6.45","5","1.60","6.00",NULL,1,"Routine pressure",False
+"SCT003","South County Community Trust","2026-01-04","85.91","75.00",114,"7.89","25.49",22,4,"3.97","8.60","6.45","2","0.80","7.00","yellow",1,"Routine pressure",False
+"SCT003","South County Community Trust","2026-01-05","87.27","75.00",100,"8.00","24.32",23,5,"3.50","8.60","6.45","3","0.00","8.00","yellow",1,"Routine pressure",False
+"SCT003","South County Community Trust","2026-01-06","85.00","75.00",111,"8.11","29.27",18,6,"4.20","8.60","6.45","4","1.20","6.00",NULL,1,"Routine pressure",False
+"SCT003","South County Community Trust","2026-01-07","86.36","75.00",97,"8.25","17.78",19,7,"3.73","8.60","6.45","5","0.40","7.00",NULL,1,"Routine pressure",False
+"SCT003","South County Community Trust","2026-01-08","89.09","75.00",143,"13.29","40.82",20,5,"5.93","12.90","6.45","5","5.10","11.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-09","90.45","75.00",154,"12.99","65.71",21,6,"5.47","12.90","6.45","6","4.30","9.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-10","91.82","75.00",140,"12.86","48.72",22,7,"5.00","12.90","6.45","7","3.50","10.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-11","89.55","83.33",151,"13.25","51.16",23,-10,"5.70","12.90","6.45","8","4.70","11.00","yellow",2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-12","90.91","83.33",137,"13.14","38.30",18,6,"5.23","12.90","6.45","5","3.90","9.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-13","92.27","83.33",148,"12.84","41.18",19,7,"5.93","12.90","6.45","6","5.10","10.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-14","90.00","83.33",134,"12.69","45.95",20,8,"5.47","12.90","6.45","7","4.30","11.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-15","95.45","83.33",165,"21.82","78.05",33,3,"7.00","21.50","10.75","11","1.50","7.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-16","93.18","83.33",151,"21.85","77.78",34,6,"7.70","21.50","10.75","8","2.70","8.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-17","94.55","83.33",162,"22.22","63.27",35,9,"7.23","21.50","10.75","9","1.90","9.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-18","95.91","83.33",173,"21.97","97.14",30,3,"7.93","21.50","10.75","10","3.10","7.00","yellow",2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-19","93.64","83.33",159,"22.01","76.92",31,6,"7.47","21.50","10.75","11","2.30","8.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-20","95.00","83.33",170,"21.76","76.74",32,9,"7.00","21.50","10.75","8","1.50","9.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-21","96.36","91.67",156,"21.79","61.70",33,12,"7.70","21.50","10.75","9","2.70","7.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-22","94.09","91.67",167,"22.16","62.75",34,-3,"7.23","21.50","10.75","10","1.90","8.00",NULL,2,"Moderate pressure",False
+"SCT003","South County Community Trust","2026-01-23","98.18","91.67",173,"31.21","135.14",35,9,"9.43","30.10","10.75","15","6.60","13.00",NULL,3,"Significant pressure",False
+"SCT003","South County Community Trust","2026-01-24","95.91","91.67",184,"30.98","112.20",30,12,"8.97","30.10","10.75","12","5.80","11.00",NULL,2,"Moderate pressure",True
+"SCT003","South County Community Trust","2026-01-25","97.27","91.67",170,"31.18","108.89",31,15,"8.50","30.10","10.75","13","5.00","12.00","yellow",3,"Significant pressure",False
+"SCT003","South County Community Trust","2026-01-26","98.64","91.67",181,"30.94","91.84",32,0,"9.20","30.10","10.75","14","6.20","13.00","yellow",3,"Significant pressure",False
+"SCT003","South County Community Trust","2026-01-27","96.36","91.67",192,"31.25","137.14",33,12,"8.73","30.10","10.75","15","5.40","11.00",NULL,3,"Significant pressure",False
+"SCT003","South County Community Trust","2026-01-28","97.73","91.67",178,"30.90","112.82",34,15,"9.43","30.10","10.75","12","6.60","12.00",NULL,3,"Significant pressure",False
+"SCT003","South County Community Trust","2026-01-29","99.09","91.67",189,"31.22","109.30",35,0,"8.97","30.10","10.75","13","5.80","13.00",NULL,3,"Significant pressure",False
+"SCT003","South County Community Trust","2026-01-30","96.82","91.67",175,"30.86","106.38",30,3,"8.50","30.10","10.75","14","5.00","11.00",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-01","85.38","70.59",341,"7.92","9.24",39,8,"3.75","23.60","17.70","6","-0.30","5.50",NULL,1,"Routine pressure",False
+"WGH001","Westborough General Hospital","2026-01-02","84.04","70.59",352,"7.95","11.38",40,9,"3.58","23.60","17.70","7","-1.10","6.50",NULL,1,"Routine pressure",False
+"WGH001","Westborough General Hospital","2026-01-03","85.38","70.59",338,"7.99","7.87",41,10,"3.84","23.60","17.70","8","0.10","4.50",NULL,1,"Routine pressure",False
+"WGH001","Westborough General Hospital","2026-01-04","84.04","70.59",349,"8.02","9.92",42,8,"3.67","23.60","17.70","5","-0.70","5.50","yellow",1,"Routine pressure",False
+"WGH001","Westborough General Hospital","2026-01-05","85.38","70.59",335,"8.06","7.69",43,9,"3.50","23.60","17.70","6","-1.50","6.50","yellow",1,"Routine pressure",False
+"WGH001","Westborough General Hospital","2026-01-06","84.04","70.59",346,"8.09","9.92",38,10,"3.75","23.60","17.70","7","-0.30","4.50",NULL,1,"Routine pressure",False
+"WGH001","Westborough General Hospital","2026-01-07","85.38","70.59",332,"8.13","6.40",39,11,"3.58","23.60","17.70","8","-1.10","5.50",NULL,1,"Routine pressure",False
+"WGH001","Westborough General Hospital","2026-01-08","89.04","70.59",378,"12.96","15.50",40,9,"5.34","35.40","17.70","11","3.60","9.50",NULL,2,"Moderate pressure",False
+"WGH001","Westborough General Hospital","2026-01-09","90.38","70.59",389,"13.11","20.00",41,10,"5.17","35.40","17.70","12","2.80","7.50",NULL,2,"Moderate pressure",False
+"WGH001","Westborough General Hospital","2026-01-10","89.04","70.59",375,"13.07","15.97",42,11,"5.00","35.40","17.70","13","2.00","8.50",NULL,2,"Moderate pressure",False
+"WGH001","Westborough General Hospital","2026-01-11","90.38","85.29",386,"12.95","17.89",43,-6,"5.25","35.40","17.70","14","3.20","9.50","yellow",2,"Moderate pressure",False
+"WGH001","Westborough General Hospital","2026-01-12","89.04","85.29",372,"12.90","14.17",38,10,"5.08","35.40","17.70","11","2.40","7.50",NULL,2,"Moderate pressure",False
+"WGH001","Westborough General Hospital","2026-01-13","90.38","85.29",383,"13.05","16.03",39,11,"5.34","35.40","17.70","12","3.60","8.50",NULL,2,"Moderate pressure",False
+"WGH001","Westborough General Hospital","2026-01-14","89.04","85.29",369,"13.01","14.53",40,12,"5.17","35.40","17.70","13","2.80","9.50",NULL,2,"Moderate pressure",False
+"WGH001","Westborough General Hospital","2026-01-15","94.42","85.29",400,"22.00","26.45",53,7,"7.00","59.00","29.50","22","0.00","5.50",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-16","93.08","85.29",386,"22.02","28.00",54,10,"7.25","59.00","29.50","19","1.20","6.50",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-17","94.42","85.29",397,"21.91","24.03",55,13,"7.08","59.00","29.50","20","0.40","7.50",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-18","93.08","85.29",408,"22.06","29.57",50,7,"7.34","59.00","29.50","21","1.60","5.50","yellow",2,"Moderate pressure",True
+"WGH001","Westborough General Hospital","2026-01-19","94.42","85.29",394,"22.08","25.21",51,10,"7.17","59.00","29.50","22","0.80","6.50",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-20","93.08","85.29",405,"21.98","26.83",52,13,"7.00","59.00","29.50","19","0.00","7.50",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-21","94.42","91.18",391,"21.99","22.83",53,16,"7.25","59.00","29.50","20","1.20","5.50",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-22","93.08","91.18",402,"21.89","24.43",54,1,"7.08","59.00","29.50","21","0.40","6.50",NULL,3,"Significant pressure",False
+"WGH001","Westborough General Hospital","2026-01-23","97.31","91.18",408,"30.88","42.74",55,13,"8.84","82.60","29.50","31","5.10","11.50",NULL,4,"Critical pressure",False
+"WGH001","Westborough General Hospital","2026-01-24","95.96","91.18",419,"31.03","38.02",50,16,"8.67","82.60","29.50","28","4.30","9.50",NULL,4,"Critical pressure",False
+"WGH001","Westborough General Hospital","2026-01-25","97.31","91.18",405,"31.11","39.20",51,19,"8.50","82.60","29.50","29","3.50","10.50","yellow",4,"Critical pressure",False
+"WGH001","Westborough General Hospital","2026-01-26","95.96","91.18",416,"31.01","34.88",52,4,"8.75","82.60","29.50","30","4.70","11.50","yellow",4,"Critical pressure",False
+"WGH001","Westborough General Hospital","2026-01-27","97.31","91.18",427,"30.91","41.74",53,16,"8.58","82.60","29.50","31","3.90","9.50",NULL,3,"Significant pressure",True
+"WGH001","Westborough General Hospital","2026-01-28","95.96","91.18",413,"30.99","36.97",54,19,"8.84","82.60","29.50","28","5.10","10.50",NULL,4,"Critical pressure",False
+"WGH001","Westborough General Hospital","2026-01-29","97.31","91.18",424,"30.90","38.21",55,4,"8.67","82.60","29.50","29","4.30","11.50",NULL,4,"Critical pressure",False
+"WGH001","Westborough General Hospital","2026-01-30","95.96","91.18",410,"30.98","39.37",50,7,"8.50","82.60","29.50","30","3.50","9.50",NULL,4,"Critical pressure",False
