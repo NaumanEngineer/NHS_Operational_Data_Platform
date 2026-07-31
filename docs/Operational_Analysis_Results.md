@@ -1,4 +1,4 @@
-# Day 5 Operational Analysis Results
+# Operational Analysis Results
 
 ## Scope
 
