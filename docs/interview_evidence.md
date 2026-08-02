@@ -1,0 +1,548 @@
+# NHS Operational Data Platform — Interview Evidence
+
+## 2-Minute Project Explanation
+
+I built the NHS Operational Data Platform to demonstrate how fragmented operational healthcare data can be brought together into a controlled analytical structure.
+
+The fictional platform combines daily information on bed capacity, A&E demand, ambulance handover pressure, admissions, discharges, workforce availability, operational incidents, weather conditions and OPEL assessments.
+
+I designed the solution in PostgreSQL using six related tables linked through a Trust reference table. I applied primary keys, foreign keys, unique constraints and validation rules so that invalid, duplicated or orphaned records could be prevented or identified.
+
+I then created a deterministic synthetic dataset covering three fictional Trusts over 30 days. The load process is reproducible, uses a fixed batch identifier and validates expected record counts before committing the transaction.
+
+To test data quality, I wrote SQL checks for duplicates, missing values, impossible bed figures, invalid A&E measures, inconsistent timestamps, invalid OPEL levels, orphan records and missing reporting dates.
+
+I also created operational analysis queries to examine bed occupancy, A&E breach rates, workforce pressure, incidents, ambulance delays, weather and OPEL escalation.
+
+Finally, I created a joined analytical view with one row per Trust per reporting date. This produces a controlled dataset that can later be connected to Power BI, Python, APIs and predictive modelling.
+
+A key governance feature is that the platform separates the recommended OPEL level from the human-approved OPEL level. This preserves professional judgement, supports auditability and allows human overrides to be identified.
+
+The project is fully synthetic and is not intended for real operational or clinical decision-making.
+
+---
+
+## STAR Interview Evidence
+
+### Situation
+
+Operational healthcare teams often work with data held across separate systems, including bed capacity, emergency demand, ambulance pressure, workforce availability, incidents, weather and escalation assessments.
+
+When these datasets are not consistently structured, analysts may face duplicate records, unreliable joins, missing reporting dates, unclear lineage and difficulty producing a trusted operational view.
+
+### Task
+
+My task was to design a portfolio-grade operational data platform that could:
+
+- integrate multiple synthetic operational datasets;
+- preserve a clear reporting grain;
+- prevent or identify invalid records;
+- support reproducible analysis;
+- provide management-focused insight;
+- preserve human accountability;
+- prepare the data for Power BI, Python and future AI workflows.
+
+### Action
+
+I designed a PostgreSQL schema containing six related tables:
+
+- `trusts`;
+- `daily_operational_metrics`;
+- `workforce_metrics`;
+- `incidents`;
+- `weather_metrics`;
+- `opel_assessments`.
+
+I applied:
+
+- primary and foreign keys;
+- unique constraints;
+- controlled-value checks;
+- range and consistency checks;
+- source-record identifiers;
+- fixed load-batch lineage;
+- created and updated timestamps.
+
+I generated a deterministic synthetic dataset covering three fictional Trusts over 30 days and added transaction-controlled validation so that incorrect record counts would prevent the load from being committed.
+
+I wrote SQL data-quality tests covering:
+
+- duplicate records;
+- missing values;
+- impossible bed figures;
+- invalid A&E and ambulance measures;
+- negative workforce values;
+- orphan records;
+- invalid incident statuses;
+- incomplete weather warnings;
+- invalid OPEL levels;
+- missing reporting dates.
+
+I also created operational analysis queries and a joined analytical view with one row per Trust per reporting date.
+
+The OPEL structure stores both the recommended level and the final human-approved level, allowing the platform to identify overrides without replacing professional judgement.
+
+### Result
+
+The final platform produced:
+
+- 387 reproducible synthetic records;
+- 90 validated Trust-day analytical rows;
+- 3 fictional Trusts;
+- 30 reporting dates;
+- no duplicate Trust-date rows;
+- no failed records in the consolidated validation summary;
+- a controlled CSV output for downstream reporting and modelling;
+- documented governance, limitations and auditability controls.
+
+The project demonstrates that I can move beyond individual SQL queries and build a structured, tested and documented analytical data product.
+
+---
+
+## Likely Interview Questions and Model Answers
+
+### 1. Why did you choose PostgreSQL for this project?
+
+I chose PostgreSQL because it supports strong relational modelling, data-integrity constraints, views, transactions and analytical SQL.
+
+That made it suitable for demonstrating how operational healthcare data can be structured, validated and prepared for downstream reporting. It also provides a strong foundation for later integration with Python, Power BI, APIs and cloud services.
+
+### 2. How did you protect the quality of the data?
+
+I applied data-quality controls at several levels.
+
+At schema level, I used primary keys, foreign keys, unique constraints and check constraints to prevent invalid or duplicate records.
+
+At load level, I used a transaction-controlled synthetic-data script with expected record-count validation before commit.
+
+At analytical level, I wrote SQL checks for missing values, impossible bed figures, invalid A&E and ambulance measures, negative workforce values, orphan records, inconsistent timestamps, invalid OPEL levels and missing reporting dates.
+
+### 3. How did you make the data load reproducible?
+
+I used deterministic SQL rather than random generation.
+
+The seed process uses:
+
+- fixed fictional Trust codes;
+- a fixed 30-day reporting period;
+- repeatable source-record identifiers;
+- a fixed load-batch identifier;
+- controlled cleanup before reloading;
+- validation of expected record counts before commit.
+
+This means the same dataset can be loaded consistently into a clean test database.
+
+### 4. How did you prevent duplicate rows in the reporting output?
+
+I first defined the intended analytical grain as one row per Trust per reporting date.
+
+I then:
+
+- aggregated workforce data at Trust-date level;
+- selected one observed weather record per Trust-date;
+- selected one OPEL assessment per Trust-date using ranking;
+- joined datasets using both `trust_id` and reporting date;
+- tested the final view for duplicate Trust-date combinations.
+
+The resulting analytical view contains 90 rows with no duplicate Trust-date records.
+
+### 5. What operational insight did the project produce?
+
+The analysis examined:
+
+- average bed occupancy;
+- A&E four-hour breach rates;
+- ambulance handover pressure;
+- workforce absence and temporary staffing;
+- incident patterns;
+- OPEL escalation;
+- weather conditions.
+
+For example, workforce absence, agency use, bank staffing and unfilled shifts were all higher on synthetic OPEL 4 days.
+
+However, I reported this as an association in the synthetic data rather than claiming that workforce pressure caused OPEL escalation.
+
+### 6. What was the most important governance feature?
+
+The most important governance feature was separating:
+
+- `recommended_opel_level`;
+- `approved_opel_level`.
+
+This preserves the original rules-based recommendation and the final human-reviewed decision.
+
+It supports auditability, allows overrides to be identified and reinforces that professional judgement remains with the human reviewer.
+
+### 7. How would this project change if it used real NHS data?
+
+A real NHS implementation would require much stronger controls, including:
+
+- formal stakeholder requirements;
+- Information Governance approval;
+- a data-protection impact assessment;
+- role-based access control;
+- secure identity and secrets management;
+- data-sharing agreements;
+- retention policies;
+- logging and monitoring;
+- clinical-safety assessment where applicable;
+- DCB0129 and DCB0160 consideration;
+- model validation and monitoring;
+- documented operational accountability.
+
+The current project is deliberately limited to synthetic data and portfolio demonstration.
+
+### 8. What would you build next?
+
+My next step would be to connect the analytical view to Power BI and build an operational-pressure dashboard.
+
+After that, I would:
+
+- connect Python for exploratory analysis and feature engineering;
+- develop an explainable OPEL-risk model;
+- expose approved outputs through FastAPI;
+- containerise the solution with Docker;
+- add automated testing and CI/CD;
+- evaluate Azure deployment and governed AI workflows.
+
+### 9. What did you learn from the project?
+
+I learned that reliable analysis depends on more than writing SQL queries.
+
+The most important lessons were:
+
+- define the data grain before joining tables;
+- build quality controls into the schema;
+- preserve source and batch lineage;
+- make loads reproducible;
+- test assumptions before reporting findings;
+- distinguish association from causation;
+- document limitations clearly;
+- preserve human accountability in AI-related workflows.
+
+### 10. Why is this project relevant to a Band 7 role?
+
+The project demonstrates several capabilities expected in senior analytical work:
+
+- translating an operational problem into a structured data solution;
+- designing quality and governance controls;
+- producing management-focused analysis;
+- explaining limitations and risks;
+- creating reusable reporting assets;
+- communicating findings clearly;
+- considering downstream implementation and stakeholder use.
+
+It shows that I can think beyond a single report and contribute to the design of a controlled analytical product.
+
+---
+
+## Technical Interview Defence
+
+### Why did you use a relational design instead of one large table?
+
+A single large table would create duplication, weak control over repeated values and a higher risk of inconsistent updates.
+
+I separated the data into related tables because each subject has a different natural grain:
+
+- one row per Trust;
+- one row per Trust per reporting date for daily operations;
+- one row per Trust per reporting date for workforce;
+- one row per incident;
+- one row per Trust, reporting date and observation type for weather;
+- one row per OPEL assessment event.
+
+This improves data integrity, supports clearer ownership of each dataset and reduces duplication.
+
+### How did you decide the grain of each table?
+
+I defined the grain before writing joins or analytical queries.
+
+For example:
+
+- `daily_operational_metrics` uses one row per Trust per reporting date;
+- `workforce_metrics` uses one row per Trust per reporting date;
+- `incidents` uses one row per incident;
+- `weather_metrics` can hold multiple observation types per Trust-date;
+- `opel_assessments` can hold multiple assessment events.
+
+Defining the grain first helped prevent duplicate rows in the final reporting view.
+
+### Why did you create a separate Trust reference table?
+
+The Trust reference table provides a controlled source for organisation-level attributes such as:
+
+- Trust code;
+- Trust name;
+- Trust type;
+- region;
+- active status.
+
+Other tables reference it through `trust_id`.
+
+This reduces repeated organisation details and ensures that operational records cannot be linked to an unknown Trust.
+
+### Why did you use foreign keys?
+
+Foreign keys enforce referential integrity.
+
+They prevent operational, workforce, incident, weather or OPEL records from referencing a Trust that does not exist in the `trusts` table.
+
+I also used restricted update and delete behaviour to reduce the risk of removing a Trust while dependent records still exist.
+
+### Why did you use unique constraints?
+
+Unique constraints protect the intended data grain.
+
+For example, a Trust should not have two daily operational rows for the same reporting date.
+
+Without a unique constraint, duplicate records could enter the database and later inflate totals, averages and reporting outputs.
+
+### Why did you use check constraints?
+
+Check constraints prevent logically impossible values from entering the database.
+
+Examples include:
+
+- occupied beds exceeding open beds;
+- A&E breaches exceeding attendances;
+- ambulance delays exceeding arrivals;
+- negative workforce values;
+- OPEL levels outside the range 1–4;
+- prediction-confidence values outside the range 0–1.
+
+This provides earlier protection than relying only on downstream validation queries.
+
+### Why did you use transactions in the seed script?
+
+The seed process uses a transaction so the load is treated as one controlled unit.
+
+If expected counts are not reached, the script raises an exception and the transaction can be rolled back.
+
+This prevents a partially loaded dataset from being accepted as complete.
+
+### Why did you use a fixed load-batch identifier?
+
+The fixed synthetic `load_batch_id` makes the load traceable and reproducible.
+
+It supports:
+
+- identifying which records belong to the demonstration batch;
+- controlled cleanup before reloading;
+- easier investigation of defects;
+- repeatable testing;
+- consistent portfolio demonstrations.
+
+In a production pipeline, each real ingestion run would normally receive a new batch identifier.
+
+### Why did you use `NULLIF` in percentage calculations?
+
+I used `NULLIF` to reduce the risk of division-by-zero errors.
+
+For example:
+
+```sql
+four_hour_breaches::numeric
+/
+NULLIF(ae_attendances, 0)
+```
+
+If attendances are zero, `NULLIF` converts the denominator to `NULL` rather than allowing the query to fail.
+
+The result must still be interpreted carefully because a `NULL` percentage indicates that the measure could not be calculated.
+
+### How did you select one OPEL record per Trust-date?
+
+The OPEL table can contain multiple assessment events.
+
+To preserve one reporting row per Trust-date, I ranked assessments within each Trust-date group and selected one record according to the defined ordering rule.
+
+This is safer than joining all assessment events directly, which could duplicate the operational row.
+
+### How did you deal with weather records that may have multiple observation types?
+
+The weather table supports more than one observation type per Trust-date.
+
+For the analytical view, I filtered to the relevant observed-weather records and used ranking to select one daily record.
+
+This prevents multiple weather rows from multiplying the daily operational row.
+
+### Why did you aggregate workforce data before joining it?
+
+Workforce data must match the Trust-date grain of the analytical view.
+
+I prepared the workforce measures at that grain before joining them to daily operations.
+
+This prevents a one-to-many join from creating duplicate Trust-date rows.
+
+### What would happen if you joined the tables without considering grain?
+
+A poorly controlled join could:
+
+- duplicate daily records;
+- inflate attendances or bed figures;
+- distort averages;
+- overcount incidents;
+- produce incorrect KPI values;
+- reduce trust in the report.
+
+That is why I verified the final view with a duplicate Trust-date test.
+
+### Why did you create a view instead of exporting directly from several queries?
+
+The view creates one reusable and controlled reporting layer.
+
+This helps ensure that Power BI, Python and future APIs use the same:
+
+- joins;
+- definitions;
+- calculated measures;
+- reporting grain;
+- selection logic.
+
+Without a shared view, different downstream tools could implement inconsistent business rules.
+
+### What is the difference between prevention and detection in your data-quality design?
+
+Prevention controls stop invalid data from entering the database.
+
+Examples include:
+
+- primary keys;
+- foreign keys;
+- unique constraints;
+- check constraints.
+
+Detection controls identify problems that may still occur or that constraints cannot fully evaluate.
+
+Examples include:
+
+- missing reporting dates;
+- unexpected record counts;
+- incomplete approval information;
+- inconsistent timestamps;
+- analytical duplicate checks.
+
+A strong data-quality approach needs both prevention and detection.
+
+### Why is the analytical view not the source of truth?
+
+The underlying relational tables remain the detailed source records.
+
+The analytical view is a derived layer designed for reporting and analysis.
+
+It simplifies access but should not replace:
+
+- original source fields;
+- detailed assessment events;
+- incident-level records;
+- audit and lineage information.
+
+### How would you improve performance at a larger scale?
+
+For a larger implementation, I would consider:
+
+- indexes on foreign keys and reporting dates;
+- composite indexes for common Trust-date queries;
+- materialised views for expensive transformations;
+- table partitioning by reporting period;
+- query-plan analysis using `EXPLAIN`;
+- incremental data loading;
+- scheduled refreshes;
+- archival and retention strategies;
+- monitoring slow queries.
+
+I would only add these after measuring actual query performance.
+
+### How would you test future schema changes?
+
+I would:
+
+1. apply changes first in a test database;
+2. rerun core schema tests;
+3. rerun expected constraint-failure tests;
+4. reload the synthetic data;
+5. rerun data-quality validation;
+6. rebuild the analytical view;
+7. check row counts and duplicates;
+8. compare key analytical outputs;
+9. document the change;
+10. promote it only after review.
+
+This reduces the risk of introducing silent reporting errors.
+
+---
+
+## 30-Second Interview Summary
+
+I built a PostgreSQL-based NHS operational data platform using fully synthetic data.
+
+It integrates Trust-level operational, workforce, incident, weather and OPEL information into a controlled relational structure.
+
+I applied schema constraints, reproducible data loading, data-quality validation and a joined analytical view with one row per Trust per reporting date.
+
+The project also preserves lineage and human accountability by separating recommended OPEL levels from human-approved decisions.
+
+It demonstrates my ability to design, test, analyse and govern an operational healthcare data product rather than only writing individual SQL queries.
+
+---
+
+## CV Evidence
+
+### Short CV Version
+
+Built a PostgreSQL NHS operational data platform integrating synthetic bed, A&E, ambulance, workforce, incident, weather and OPEL data across three fictional Trusts. Designed relational tables, constraints, reproducible seed loading, SQL validation tests and a Trust-day analytical view for downstream Power BI, Python and AI workflows.
+
+### Band 7 CV Version
+
+Designed and developed a governed PostgreSQL operational intelligence platform integrating synthetic Trust-level capacity, emergency demand, workforce, incident, weather and OPEL data. Implemented relational modelling, data-integrity controls, deterministic batch loading, SQL data-quality assurance and a validated analytical reporting layer containing 90 unique Trust-day records. Produced management-focused analysis while documenting lineage, limitations, human oversight and future deployment requirements.
+
+### Technical CV Version
+
+Developed a PostgreSQL operational data platform with six normalised tables, primary and foreign keys, unique and check constraints, deterministic synthetic-data generation, transaction-controlled loading, lineage fields, SQL validation suites and a reusable Trust-date analytical view. Tested schema failures, duplicate prevention, missing-date detection and downstream CSV export readiness.
+
+---
+
+## LinkedIn Project Description
+
+Developed a synthetic NHS Operational Data Platform in PostgreSQL to demonstrate end-to-end healthcare data-engineering capability.
+
+The solution integrates operational capacity, A&E demand, ambulance handover pressure, workforce, incidents, weather and OPEL assessments across three fictional Trusts.
+
+Key features include:
+
+- relational schema design;
+- data-integrity constraints;
+- reproducible synthetic-data loading;
+- source and batch lineage;
+- SQL data-quality testing;
+- operational analysis;
+- a controlled Trust-day analytical view;
+- human-reviewed OPEL decision tracking;
+- governance and limitations documentation.
+
+The platform is designed as a foundation for future Power BI, Python, FastAPI, Docker, Azure and explainable AI development.
+
+---
+
+## Evidence Summary
+
+| Capability | Project evidence |
+|---|---|
+| Requirements interpretation | Converted an NHS operational-pressure problem into a structured data platform |
+| Data modelling | Designed six related PostgreSQL tables with defined grains |
+| Data quality | Applied preventive constraints and detective SQL validation |
+| Reproducibility | Built deterministic, transaction-controlled synthetic-data loading |
+| Analysis | Answered seven operational-management questions |
+| Reporting | Created a reusable Trust-day analytical view |
+| Governance | Documented permitted use, prohibited use, risks and limitations |
+| Auditability | Preserved source, batch, timestamp and decision-review fields |
+| Human oversight | Separated recommended and approved OPEL levels |
+| Communication | Produced README, technical documentation and Band 7-style findings |
+
+---
+
+## Final Interview Message
+
+The strongest message from this project is that reliable healthcare analytics depends on controlled data structures, clear definitions, reproducible processing and human accountability.
+
+The technical solution is important, but the value comes from creating data that analysts, managers and future systems can use consistently, transparently and safely.
