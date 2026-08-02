@@ -1,129 +1,114 @@
 # NHS Operational Data Platform
 
-A PostgreSQL-based healthcare data engineering project designed to integrate synthetic NHS operational, workforce, incident, weather, and OPEL data into a structured and auditable analytical platform.
-
 ## Project Overview
 
-NHS organisations rely on data from multiple operational systems to monitor demand, capacity, workforce pressure, patient flow, incidents, and escalation status.
+The NHS Operational Data Platform is a PostgreSQL-based portfolio project that demonstrates how operational healthcare data can be structured, validated, analysed and prepared for downstream reporting and AI workflows.
 
-These datasets are often stored separately, use inconsistent structures, and require significant preparation before they can support reliable reporting, machine learning, or AI-assisted decision-making.
+The platform combines fictional Trust-level data covering:
 
-The NHS Operational Data Platform will create a central PostgreSQL database that brings these data sources together using a clear relational structure, data-quality controls, analytical SQL, and governance-aware design.
+- bed capacity and occupancy;
+- A&E demand and four-hour breaches;
+- ambulance handover pressure;
+- admissions, discharges and discharge readiness;
+- workforce capacity and absence;
+- operational incidents;
+- weather conditions;
+- OPEL recommendations and human-approved decisions.
 
-This project will become the data-engineering foundation for future dashboards, machine-learning models, RAG systems, and governed healthcare AI workflows.
+The project was developed as the data-engineering foundation for future Power BI dashboards, Python analysis, API development, feature engineering and healthcare AI experimentation.
 
-## Healthcare Problem
+All organisations and values are synthetic.
 
-Operational pressure within NHS trusts and Integrated Care Boards can be influenced by several connected factors, including:
+---
 
-- high bed occupancy
-- A&E four-hour breaches
-- ambulance handover delays
-- delayed discharge and social-care pressure
-- workforce shortages
-- staff sickness
-- patient-safety incidents
-- seasonal and weather-related demand
-- changes in OPEL escalation level
+## NHS Operational Problem
 
-When these data sources are analysed separately, it can be difficult for operational teams to understand system-wide pressure or identify emerging risks.
+Operational teams often need to understand pressure across several connected areas rather than reviewing one metric in isolation.
 
-This project aims to demonstrate how healthcare operational data can be:
+For example, increasing bed occupancy may coincide with:
 
-1. stored consistently
-2. connected across different operational domains
-3. checked for quality issues
-4. analysed using reproducible SQL
-5. prepared for dashboards and machine-learning systems
-6. governed through traceability, documentation, and human oversight
+- higher A&E demand;
+- ambulance handover delays;
+- patients waiting for discharge;
+- workforce absence;
+- unfilled shifts;
+- operational incidents;
+- weather disruption;
+- higher OPEL escalation levels.
+
+When these datasets are held separately, analysts may face:
+
+- inconsistent definitions;
+- duplicated records;
+- missing reporting dates;
+- unreliable joins;
+- unclear data lineage;
+- manual reconciliation;
+- weak auditability;
+- difficulty producing a single management-ready view.
+
+This project demonstrates how a relational data platform can provide a controlled analytical foundation.
+
+---
 
 ## Intended Users
 
-The platform is designed as a portfolio demonstration for the types of users who may work with NHS operational data, including:
+The fictional platform is designed around the needs of:
 
-- NHS Integrated Care Board analysts
-- trust performance and information teams
-- winter-pressure and operational-planning teams
-- workforce-planning teams
-- health intelligence analysts
-- data engineers
-- data scientists
-- machine-learning engineers
-- digital-transformation teams
-- healthcare AI governance professionals
+- NHS Trust information analysts;
+- ICB operational analysts;
+- performance and planning teams;
+- winter-pressure teams;
+- workforce planners;
+- data engineers;
+- BI developers;
+- data scientists;
+- healthcare AI engineers.
 
-## Current Scope
+---
 
-The initial version of the platform will focus on building the PostgreSQL database foundation.
+## Project Objectives
 
-The planned scope includes:
+The project aims to demonstrate the ability to:
 
-- creating a PostgreSQL database and operational schema
-- designing relational healthcare tables
-- defining primary and foreign keys
-- loading realistic synthetic NHS-style data
-- creating data-quality constraints
-- writing validation queries
-- producing operational SQL analysis
-- documenting the database architecture
-- creating a data dictionary
-- recording governance considerations
+1. design a relational PostgreSQL schema;
+2. apply primary keys, foreign keys, unique constraints and validation rules;
+3. generate reproducible synthetic operational data;
+4. preserve source and batch lineage;
+5. identify poor-quality records using SQL;
+6. answer operational-management questions;
+7. produce one analytical row per Trust per reporting date;
+8. export a controlled dataset for downstream systems;
+9. document governance, limitations and human accountability;
+10. communicate findings using Band 7-style analytical language.
 
-The first database version will include the following entities:
+---
 
-- trusts
-- daily operational metrics
-- workforce metrics
-- incidents
-- weather metrics
-- OPEL assessments
+## Architecture
 
-Future versions will add:
+```mermaid
+flowchart LR
+    A[Synthetic operational sources] --> B[PostgreSQL relational schema]
 
-- automated Python ETL pipelines
-- reusable analytical views
-- Power BI reporting
-- FastAPI integration
-- machine-learning model connections
-- healthcare document retrieval
-- human-in-the-loop AI workflows
-- audit logging
-- monitoring and deployment controls
+    B --> C1[Trust reference data]
+    B --> C2[Daily operational metrics]
+    B --> C3[Workforce metrics]
+    B --> C4[Operational incidents]
+    B --> C5[Weather metrics]
+    B --> C6[OPEL assessments]
 
-## Planned Architecture
+    C1 --> D[Data-quality validation]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    C5 --> D
+    C6 --> D
 
-```text
-Synthetic operational data sources
-                |
-                v
-       Data-quality validation
-                |
-                v
-        PostgreSQL database
-                |
-                v
-       Analytical SQL views
-                |
-        +-------+-------+
-        |               |
-        v               v
-   Power BI        Python / ML
-                        |
-                        v
-              RAG and AI workflows
-                        |
-                        v
-               Human review and audit
+    D --> E[Operational SQL analysis]
+    D --> F[Trust daily analytical view]
 
-Author
-
-Name: Nauman Khan
-Project focus: NHS data engineering, healthcare analytics, explainable AI, and governed healthcare automation
-
-
-Commit it with:
-
-```bash
-git add README.md
-git commit -m "Add initial project README"
-git push
+    F --> G[CSV export]
+    G --> H1[Power BI]
+    G --> H2[Python modelling]
+    G --> H3[API development]
+    G --> H4[Future RAG and agent tools]
