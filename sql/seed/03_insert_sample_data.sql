@@ -240,7 +240,7 @@ SELECT
     CASE trust_code
         WHEN 'WGH001' THEN 115
         WHEN 'NRT002' THEN 90
-        ELSE 35
+        ELSE 55
     END
     + MOD(day_number * 4, 18),
 
