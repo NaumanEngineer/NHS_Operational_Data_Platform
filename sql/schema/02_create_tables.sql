@@ -96,6 +96,13 @@ CREATE TABLE operational.daily_operational_metrics (
             AND COALESCE(discharges, 0) >= 0
         ),
 
+    CONSTRAINT chk_daily_operational_ambulance_counts
+        CHECK (
+            ambulance_arrivals IS NULL
+            OR ambulance_handover_delays IS NULL
+            OR ambulance_handover_delays <= ambulance_arrivals
+        ),
+
     CONSTRAINT chk_daily_operational_beds
         CHECK (
             general_beds_occupied IS NULL
@@ -483,7 +490,6 @@ CREATE TABLE operational.opel_assessments (
             )
         )
 );
-
 
 
 
