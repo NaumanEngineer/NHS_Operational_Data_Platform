@@ -546,3 +546,361 @@ The platform is designed as a foundation for future Power BI, Python, FastAPI, D
 The strongest message from this project is that reliable healthcare analytics depends on controlled data structures, clear definitions, reproducible processing and human accountability.
 
 The technical solution is important, but the value comes from creating data that analysts, managers and future systems can use consistently, transparently and safely.
+
+
+
+---
+
+# Power BI Reporting Design Evidence
+
+## 30-Second Interview Answer
+
+In Week 14, I designed the Power BI reporting layer before implementation. I defined the reporting requirements, created a 21-KPI dictionary, designed nine dashboard pages, specified a Trust-date star schema, documented governance and source-readiness controls, and created a 49-test UAT framework. I also defined PostgreSQL reconciliation rules so the final Power BI implementation can be tested against the source rather than accepted simply because the visuals look correct.
+
+---
+
+# 60-Second Interview Answer
+
+In Week 14, I treated the Power BI layer as an engineered reporting product rather than just a dashboard.
+
+I first defined the reporting requirements and the business questions each page needed to answer. I then created a KPI dictionary covering 21 measures and documented their source fields, aggregation rules, limitations and readiness status.
+
+After that, I designed nine dashboard pages and specified a star-schema semantic model with one Trust-date fact table, controlled dimensions and explicit DAX measures.
+
+I also documented governance requirements such as human-reviewed OPEL, blocked KPI handling, synthetic-data warnings and PostgreSQL reconciliation.
+
+Finally, I designed a 49-test UAT framework covering data, relationships, measures, filters, drill-through, governance and accessibility.
+
+This means Week 15 can focus on controlled Power BI implementation rather than deciding what the report should contain.
+
+---
+
+# 2-Minute Technical Interview Answer
+
+A major design decision in the project was not to start Power BI by immediately building charts.
+
+I first defined the reporting grain as one row per Trust per reporting date. That became the basis for the semantic model, data-quality controls and drill-through behaviour.
+
+I then defined a 21-KPI framework and reviewed each KPI for correct aggregation.
+
+For example, I identified that percentages such as bed occupancy and workforce absence should not be summed. I also avoided treating the simple average of daily A&E breach percentages as a weighted period rate because the raw breach numerator is not currently available.
+
+For workforce data, I designed agency and bank FTE as average daily measures rather than summing them across dates, because the sum would represent FTE-days rather than workforce size.
+
+For OPEL, I treated levels as ordered categories rather than additive numerical measures.
+
+The planned model uses a star schema with `FactTrustDailyOperations` at Trust-date grain and dimensions for date, Trust, OPEL, pressure status and weather warning.
+
+I specified one-to-many, single-direction relationships and a dedicated `_Measures` table for explicit DAX calculations.
+
+I also designed governance controls. Recommended and approved OPEL remain separate, human overrides remain visible, blocked KPIs cannot be silently replaced by weak proxies, and project-defined thresholds must not be presented as official NHS policy.
+
+Finally, I created formal acceptance testing. The Power BI implementation will be reconciled against PostgreSQL and tested for relationships, measures, filters, drill-through, blocked KPI behaviour, governance and accessibility.
+
+The result is that the dashboard has a defined specification and acceptance standard before implementation starts.
+
+---
+
+# STAR Interview Example — Designing Before Building
+
+## Situation
+
+I had completed the PostgreSQL operational data platform and needed to create a Power BI reporting layer for the synthetic NHS operational dataset.
+
+## Task
+
+My task was to design a dashboard that could support executive operational review while remaining technically reliable, governed and explainable.
+
+## Action
+
+Instead of starting with visuals, I designed the reporting layer in stages.
+
+I:
+
+- defined reporting requirements;
+- created a 21-KPI dictionary;
+- reviewed aggregation behaviour;
+- designed nine dashboard pages;
+- specified a Trust-date star schema;
+- designed explicit DAX measures;
+- documented blocked source dependencies;
+- defined governance controls;
+- created a 49-test UAT framework;
+- linked requirements to acceptance tests.
+
+I also documented PostgreSQL reconciliation tolerances so Power BI values can be verified against the source.
+
+## Result
+
+The project now has a controlled Power BI implementation specification.
+
+Week 15 can focus on building and validating the semantic model against predefined requirements instead of creating the dashboard through trial and error.
+
+---
+
+# STAR Interview Example — Identifying a KPI Risk
+
+## Situation
+
+While designing the KPI framework, I reviewed several percentage-based measures that were planned for the dashboard.
+
+## Task
+
+I needed to determine whether the existing daily percentage fields could safely be aggregated across longer reporting periods.
+
+## Action
+
+I reviewed the difference between simple averages and weighted rates.
+
+For the A&E four-hour breach KPI, I recognised that calculating a correct weighted period rate requires:
+
+- total four-hour breaches;
+- total A&E attendances.
+
+The current source contains the daily percentage but does not yet provide the raw breach numerator needed for a properly weighted period calculation.
+
+Instead of using an average of percentages and presenting it as the final KPI, I classified the weighted measure as blocked and documented the required source enrichment.
+
+## Result
+
+The reporting design avoids presenting a mathematically weaker calculation as a trusted KPI.
+
+The limitation is transparent and can be resolved properly when the required source field is introduced.
+
+---
+
+# STAR Interview Example — Preventing Incorrect Aggregation
+
+## Situation
+
+The operational dataset contains daily agency and bank FTE measures.
+
+## Task
+
+I needed to decide how these measures should behave when users selected multiple reporting dates.
+
+## Action
+
+I identified that summing daily FTE values across dates would create an FTE-day quantity.
+
+If that result were labelled as total workforce capacity, it would be misleading.
+
+I therefore designed the primary measures as:
+
+- Average Daily Agency FTE;
+- Average Daily Bank FTE.
+
+I also set the source columns to avoid automatic Sum aggregation in the semantic model.
+
+## Result
+
+The reporting layer preserves the correct business meaning of the workforce measures and reduces the risk of misleading totals.
+
+---
+
+# STAR Interview Example — Human-in-the-Loop Governance
+
+## Situation
+
+The platform includes OPEL-related decision-support concepts, including planned automated recommendations and human-approved OPEL outcomes.
+
+## Task
+
+I needed to ensure that the reporting design did not imply that an algorithm had autonomous operational authority.
+
+## Action
+
+I designed the model so that:
+
+- `recommended_opel_level` and `approved_opel_level` remain separate;
+- approved OPEL is treated as the human-reviewed outcome;
+- human override information remains visible;
+- an override is not automatically treated as model or human failure;
+- recommendation-versus-approval analysis remains blocked until the recommendation field is available.
+
+I also incorporated these rules into governance documentation and acceptance tests.
+
+## Result
+
+The reporting design preserves human accountability and provides a clearer audit trail for future decision-support functionality.
+
+---
+
+# Technical Decisions I Can Defend in Interview
+
+## Why use a star schema?
+
+Because it:
+
+- separates descriptive dimensions from operational measures;
+- simplifies filter behaviour;
+- reduces ambiguous relationships;
+- makes DAX easier to maintain;
+- improves model explainability.
+
+---
+
+## Why use single-direction relationships?
+
+Because they provide predictable dimension-to-fact filtering and reduce the risk of ambiguous filter paths.
+
+Bidirectional filtering would only be introduced for a documented analytical requirement.
+
+---
+
+## Why use explicit DAX measures?
+
+Because explicit measures provide controlled:
+
+- aggregation;
+- formatting;
+- filter behaviour;
+- null handling;
+- reconciliation.
+
+They are also easier for another analyst to review.
+
+---
+
+## Why not sum OPEL?
+
+Because OPEL values are ordered categories, not additive numerical quantities.
+
+Appropriate analysis includes:
+
+- latest approved level;
+- count of OPEL 3–4 days;
+- count of OPEL 4 days;
+- distribution by category.
+
+---
+
+## Why call the discharge KPI patient-days?
+
+Because `patients_ready_for_discharge` is a daily count.
+
+Summing it across dates does not necessarily represent unique patients.
+
+The aggregated measure is therefore labelled:
+
+`Discharge-Ready Patient-Days`
+
+---
+
+## Why keep blocked KPIs visible?
+
+Because hiding limitations encourages misleading analysis.
+
+A professional reporting product should show:
+
+`Source enrichment required`
+
+rather than silently substitute a weaker calculation.
+
+---
+
+## Why reconcile Power BI with PostgreSQL?
+
+Because a dashboard value appearing reasonable does not prove that:
+
+- the correct rows were loaded;
+- the correct relationships were applied;
+- the correct aggregation was used;
+- filtering is behaving correctly.
+
+Reconciliation provides independent evidence that the semantic model matches the validated source logic.
+
+---
+
+# Week 14 Portfolio Evidence
+
+Week 14 produced:
+
+- Power BI reporting requirements;
+- 21-KPI dictionary;
+- nine-page dashboard wireframe;
+- Trust-date star-schema specification;
+- semantic-model relationship rules;
+- explicit measure strategy;
+- aggregation controls;
+- governance framework;
+- data-quality and lineage controls;
+- source-readiness register;
+- 49-test UAT framework;
+- requirements-to-test traceability;
+- Power BI project README.
+
+---
+
+# CV-Ready Bullet — Current Stage
+
+Designed the governed Power BI reporting architecture for a synthetic NHS operational intelligence platform, defining a 21-KPI framework, nine-page dashboard UX, Trust-date star schema, explicit measure strategy, PostgreSQL reconciliation controls, data lineage, governance and a 49-test UAT framework.
+
+---
+
+# CV-Ready Bullet — Short Version
+
+Designed a governed Power BI semantic and reporting architecture for synthetic NHS operational intelligence, including 21 KPIs, star-schema modelling, PostgreSQL reconciliation and formal UAT.
+
+---
+
+# CV-Ready Bullet — Technical Version
+
+Specified a Power BI star-schema semantic model at Trust-date grain, including controlled dimensions, one-to-many single-direction relationships, explicit DAX measure definitions, aggregation safeguards, source-readiness controls and PostgreSQL reconciliation rules.
+
+---
+
+# CV-Ready Bullet — Governance Version
+
+Designed Power BI governance and UAT controls covering human-reviewed OPEL, blocked KPI management, synthetic-data disclosure, source lineage, reconciliation, accessibility and release acceptance.
+
+---
+
+# Important CV Wording at the Current Stage
+
+At the end of Week 14, use words such as:
+
+- designed;
+- specified;
+- defined;
+- documented;
+- modelled;
+- planned.
+
+Do not yet claim:
+
+- built;
+- deployed;
+- implemented;
+- validated;
+- released.
+
+Those claims become appropriate only after the corresponding Power BI implementation and tests are actually completed.
+
+---
+
+# Week 15 Interview Progression
+
+After Week 15 semantic-model implementation, this evidence can be upgraded from:
+
+`Designed a Power BI semantic model`
+
+to:
+
+`Built and validated a Power BI semantic model`
+
+After the dashboard implementation and UAT are complete, it can progress to:
+
+`Built, reconciled and validated a governed Power BI operational intelligence dashboard.`
+
+---
+
+# Week 14 Interview Summary
+
+The strongest Week 14 story is not:
+
+`I designed some Power BI pages.`
+
+It is:
+
+`I treated Power BI as an engineered reporting product. I defined requirements, KPI semantics, dimensional modelling, governance, reconciliation, traceability and acceptance tests before implementation so the final dashboard could be built against a controlled specification.`
