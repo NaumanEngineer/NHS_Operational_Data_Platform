@@ -1,88 +1,122 @@
-# NHS Operational Intelligence Dashboard — Power BI
+# NHS Operational Intelligence — Power BI
 
 ## Overview
 
-This folder contains the Power BI reporting design and implementation plan for the NHS Operational Intelligence Platform.
+This folder documents the Power BI implementation for the NHS Operational Data Platform portfolio project.
 
-The dashboard is designed to transform validated synthetic operational data from PostgreSQL into a governed management-information product for:
+The Power BI solution converts a validated PostgreSQL analytical source into a governed semantic model designed for operational intelligence reporting.
 
-- executive operational review;
-- Trust comparison;
-- capacity and patient-flow analysis;
-- A&E and ambulance analysis;
-- workforce-pressure analysis;
-- OPEL monitoring;
-- data-quality review;
-- governance and auditability.
+The current implementation includes:
 
-All organisations and values used in this project are synthetic.
-
-The dashboard is intended for learning, technical testing and portfolio demonstration only.
-
-It must not be used for real clinical, operational or patient-level decision making.
-
----
-
-## Project Objective
-
-The objective of the Power BI layer is to demonstrate how a controlled operational reporting product can be designed before implementation.
-
-The reporting layer is designed to provide:
-
-- clear KPI definitions;
-- a governed semantic model;
-- consistent filtering;
-- explicit DAX measures;
-- drill-through investigation;
-- source-readiness controls;
+- PostgreSQL source connection;
+- Power Query staging;
+- controlled dimension tables;
+- Trust-date fact table;
+- star-schema relationships;
+- explicit DAX measure layer;
+- weighted KPI calculations;
+- governance and lineage fields;
 - PostgreSQL reconciliation;
-- data-quality monitoring;
-- human accountability around OPEL;
-- formal UAT and release criteria.
+- filter-context testing;
+- formal UAT.
+
+The project uses synthetic data only and must not be used for real NHS clinical or operational decision-making.
 
 ---
 
-## Current Project Status
+# Current Implementation Status
 
-The Power BI component is currently in the design-complete stage.
+Current status:
 
-Week 14 completed:
+**Semantic model implemented and validated — final dashboard visual implementation pending.**
 
-- business and reporting requirements;
-- KPI dictionary;
-- dashboard wireframes;
-- semantic-model specification;
-- governance framework;
-- acceptance-testing framework;
-- requirements traceability.
+Completed:
 
-Week 15 will begin semantic-model implementation.
+- PostgreSQL source integration
+- source validation
+- dimension layer
+- fact table
+- star-schema relationships
+- explicit DAX measures
+- weighted KPI logic
+- data-quality measures
+- PostgreSQL reconciliation
+- filter-context testing
+- governance validation
+- formal UAT
 
-The project does not yet claim that the Power BI dashboard has been fully built or validated.
+Remaining:
+
+- final dashboard page implementation
+- drill-through
+- navigation
+- accessibility testing
+- final visual UAT
 
 ---
 
-# Reporting Architecture
+# Data Source
 
-The reporting architecture is:
+Power BI currently connects to:
+
+`nhs_operations_test`
+
+PostgreSQL schema:
+
+`operational`
+
+Analytical view:
+
+`operational.vw_trust_daily_analytical`
+
+The validated analytical source contains:
+
+- 90 Trust-date rows;
+- 3 fictional Trusts;
+- 30 reporting dates;
+- reporting period 2026-01-01 to 2026-01-30;
+- no duplicate Trust-date records.
+
+The Power Query staging query is:
+
+`SourceTrustDailyAnalytical`
+
+This query is retained as the controlled source layer and is not loaded directly into the report model.
+
+---
+
+# Semantic Model Architecture
+
+The implemented semantic model follows a star-schema design.
+
+Central fact table:
+
+`FactTrustDailyOperations`
+
+Dimensions:
+
+- `DimDate`
+- `DimTrust`
+- `DimOPEL`
+- `DimPressureStatus`
+- `DimWeatherWarning`
+
+Dedicated measure table:
+
+`_Measures`
+
+Conceptual model:
 
 ```text
-Synthetic Source Data
-        ↓
-PostgreSQL Operational Schema
-        ↓
-Data-Quality Validation
-        ↓
-Analytical SQL View
-        ↓
-CSV Export or Governed Source Connection
-        ↓
-Power Query
-        ↓
-Power BI Semantic Model
-        ↓
-Explicit DAX Measures
-        ↓
-Dashboard Pages
-        ↓
-UAT and Reconciliation
+                   DimDate
+                      |
+                      |
+DimTrust ---- FactTrustDailyOperations ---- DimOPEL
+                      |
+                      |
+             DimPressureStatus
+                      |
+                      |
+              DimWeatherWarning
+
+                  _Measures
