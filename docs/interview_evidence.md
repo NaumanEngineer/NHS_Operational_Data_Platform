@@ -904,3 +904,411 @@ The strongest Week 14 story is not:
 It is:
 
 `I treated Power BI as an engineered reporting product. I defined requirements, KPI semantics, dimensional modelling, governance, reconciliation, traceability and acceptance tests before implementation so the final dashboard could be built against a controlled specification.`
+............................................................
+
+# Week 15 Interview Evidence — Power BI Semantic Model Implementation
+
+## Project Context
+
+During Week 15, I converted the PostgreSQL-based NHS Operational Data Platform into a validated Power BI semantic model.
+
+The objective was not simply to create visuals.
+
+The focus was to build a reporting layer that was:
+
+- structurally correct;
+- analytically governed;
+- reconciled against PostgreSQL;
+- auditable;
+- transparent about limitations;
+- suitable for future management-facing dashboard development.
+
+The project uses synthetic data only.
+
+---
+
+## What I Built
+
+I implemented:
+
+- a PostgreSQL-to-Power-BI source connection;
+- a controlled Power Query staging layer;
+- `FactTrustDailyOperations`;
+- `DimDate`;
+- `DimTrust`;
+- `DimOPEL`;
+- `DimPressureStatus`;
+- `DimWeatherWarning`;
+- a dedicated `_Measures` table;
+- explicit DAX measures;
+- weighted KPI calculations;
+- QA measures;
+- filter-context tests;
+- PostgreSQL reconciliation;
+- formal UAT.
+
+The fact table uses a defined grain:
+
+**one row per fictional Trust per reporting date**
+
+Validated dataset:
+
+- 90 Trust-date rows;
+- 3 fictional Trusts;
+- 30 reporting dates.
+
+---
+
+## Semantic Modelling Evidence
+
+I implemented a star-schema design using active one-to-many, single-direction relationships.
+
+Primary relationships:
+
+- `DimDate[Date]`
+  → `FactTrustDailyOperations[reporting_date]`
+
+- `DimTrust[trust_id]`
+  → `FactTrustDailyOperations[trust_id]`
+
+- `DimOPEL[OPELLevel]`
+  → `FactTrustDailyOperations[approved_opel_level]`
+
+- `DimPressureStatus[PressureStatus]`
+  → `FactTrustDailyOperations[operational_pressure_status]`
+
+- `DimWeatherWarning[WeatherWarningKey]`
+  → `FactTrustDailyOperations[WeatherWarningKey]`
+
+I avoided:
+
+- many-to-many primary relationships;
+- unnecessary bidirectional filtering;
+- duplicate active paths.
+
+The `_Measures` table is intentionally disconnected and is used purely as an explicit DAX measure container.
+
+---
+
+## Source Inspection and Requirements Change
+
+A key Week 15 lesson was that implementation should be driven by the actual source rather than design assumptions.
+
+During Week 14, some KPIs had been deliberately classified as blocked because required raw source fields had not been confirmed.
+
+When I inspected the real analytical view in Week 15, I discovered fields including:
+
+- `four_hour_breaches`;
+- `ae_attendances`;
+- `general_beds_open`;
+- `general_beds_occupied`;
+- `ambulance_arrivals`;
+- `ambulance_handover_delays`;
+- `establishment_fte`;
+- `absence_fte`;
+- `recommended_opel_level`;
+- `approved_opel_level`;
+- `human_override_indicator`.
+
+This allowed several previously blocked capabilities to be reassessed.
+
+---
+
+## Weighted KPI Design
+
+I avoided relying only on average percentage fields where raw numerator and denominator data existed.
+
+### A&E Four-Hour Breach Rate
+
+Instead of averaging daily breach percentages, I implemented:
+
+`SUM(four_hour_breaches) / SUM(ae_attendances)`
+
+PostgreSQL reconciliation result:
+
+`19.82%`
+
+### General-Bed Occupancy
+
+The model supports:
+
+`SUM(general_beds_occupied) / SUM(general_beds_open)`
+
+rather than relying only on a simple average of daily occupancy percentages.
+
+### Workforce Absence
+
+I implemented:
+
+`SUM(absence_fte) / SUM(establishment_fte)`
+
+This produces a weighted absence measure.
+
+This demonstrated an understanding that percentage fields should not automatically be averaged across records with different denominators.
+
+---
+
+## FTE Interpretation
+
+I treated FTE metrics carefully.
+
+For example, summing `agency_fte` across 30 dates would represent something closer to FTE-days rather than an average staffing level.
+
+I therefore implemented measures such as:
+
+- Average Daily Agency FTE;
+- Average Daily Bank FTE;
+- Average Establishment FTE;
+- Average Substantive FTE.
+
+This makes the business meaning clearer and reduces the risk of misleading reporting.
+
+---
+
+## OPEL and Human-Governance Evidence
+
+The semantic model preserves both:
+
+- `recommended_opel_level`;
+- `approved_opel_level`.
+
+The active OPEL dimension relationship uses:
+
+`approved_opel_level`
+
+because this represents the human-reviewed operational outcome.
+
+Recommended OPEL remains available for governance analysis.
+
+I implemented:
+
+- Human Override Count;
+- Human Override Percentage;
+- Recommendation Agreement Count;
+- Recommendation Agreement Percentage;
+- OPEL Recommendation Mismatch Count;
+- Override Reconciliation Variance.
+
+PostgreSQL confirmed:
+
+- 4 human overrides;
+- 4 recommendation/approval mismatches.
+
+Power BI reconciliation variance:
+
+`0`
+
+This demonstrated that automated recommendations and human-reviewed outcomes can be analysed separately rather than silently conflated.
+
+---
+
+## Defect Identification and Root-Cause Analysis
+
+During UAT, PostgreSQL reconciliation identified that the weather-warning dimension was missing:
+
+`yellow / wind`
+
+The source contained:
+
+- No warning = 70 Trust-days;
+- yellow / ice = 12;
+- yellow / wind = 6;
+- amber / snow and ice = 2.
+
+The issue was traced to Power Query duplicate-removal logic.
+
+Duplicates had been removed using warning level alone.
+
+Because both:
+
+- yellow / ice;
+- yellow / wind
+
+shared the same warning level, one legitimate category was removed.
+
+I corrected the dimension so uniqueness was based on the combination of:
+
+- warning level;
+- warning type.
+
+Final Power BI reconciliation:
+
+`20 weather-warning Trust-days`
+
+This demonstrated:
+
+- source reconciliation;
+- defect detection;
+- root-cause analysis;
+- controlled correction;
+- retesting.
+
+---
+
+## PostgreSQL Reconciliation Evidence
+
+I validated the Power BI semantic model directly against PostgreSQL.
+
+Key results included:
+
+| KPI | Reconciled Result |
+|---|---:|
+| Fact rows | 90 |
+| Trusts | 3 |
+| Reporting dates | 30 |
+| Total A&E Attendances | 25,800 |
+| Four-Hour Breaches | 5,113 |
+| Weighted A&E Breach Rate | 19.82% |
+| Admissions | 16,425 |
+| Discharges | 15,654 |
+| Net Admissions | 771 |
+| OPEL 3-4 Trust-days | 39 |
+| OPEL 4 Trust-days | 7 |
+| Human Overrides | 4 |
+| High-Pressure Trust-days | 39 |
+| Weather-Warning Trust-days | 20 |
+
+Agreed tolerances were:
+
+- counts: exact;
+- percentages: ±0.01 percentage points;
+- averages/FTE: ±0.01;
+- categorical results: exact.
+
+---
+
+## Filter-Context Testing
+
+I tested the semantic model using multiple slicer contexts.
+
+Examples:
+
+- one Trust = 30 fact rows;
+- 10 days × 3 Trusts = 30 rows;
+- 10 days × 1 Trust = 10 rows;
+- OPEL 4 = 7 rows;
+- OPEL 3-4 = 39 rows;
+- Significant + Critical pressure = 39 rows;
+- yellow / ice = 12 rows;
+- yellow / wind = 6 rows;
+- amber / snow and ice = 2 rows;
+- all weather warnings = 20 rows;
+- no warning = 70 rows.
+
+This verified that relationships and DAX measures responded correctly to filter context.
+
+---
+
+## Data-Quality Controls
+
+I created explicit QA measures including:
+
+- Fact Row Count;
+- Duplicate Trust-Date Count;
+- Reporting Completeness Percentage;
+- Net Admissions Variance;
+- A&E Breach Rate QA;
+- Workforce Absence Difference;
+- OPEL Recommendation Mismatch Count;
+- Override Reconciliation Variance.
+
+Clean expected results included:
+
+- duplicate Trust-date count = 0;
+- completeness = 100%;
+- net admissions variance = 0;
+- A&E QA variance = 0;
+- workforce QA variance = 0;
+- override reconciliation variance = 0.
+
+---
+
+## Formal UAT
+
+I maintained a structured Power BI acceptance-testing framework.
+
+Current status:
+
+- 49 planned tests;
+- 39 Pass;
+- 0 Fail;
+- 1 Blocked;
+- 1 Deferred;
+- 8 Not run.
+
+The remaining Not Run tests relate mainly to:
+
+- final dashboard visuals;
+- drill-through;
+- navigation;
+- accessibility;
+- usability.
+
+This separates semantic-model validation from final report-level UAT.
+
+---
+
+## Governance Decision — Ambulance KPI
+
+The source contains:
+
+- `ambulance_arrivals`;
+- `ambulance_handover_delays`;
+- `ambulance_handover_delay_pct`.
+
+Although a technical ratio can be calculated, the exact business definition of `ambulance_handover_delays` has not been formally confirmed.
+
+I therefore kept the KPI:
+
+`Provisional`
+
+rather than presenting an unsupported interpretation as fact.
+
+This demonstrates that technically possible calculations should not automatically be treated as governed business KPIs.
+
+---
+
+## Example Interview Question
+
+### Tell us about a Power BI model you have built.
+
+In my NHS Operational Data Platform portfolio project, I built a Power BI semantic model on top of a validated PostgreSQL analytical view.
+
+I first inspected the actual source rather than assuming the design specification was complete. That identified additional raw fields for bed occupancy, A&E breaches, workforce absence and OPEL governance, which allowed me to improve several KPI definitions.
+
+I created a Trust-date fact table and controlled Date, Trust, OPEL, pressure-status and weather-warning dimensions using a one-to-many, single-direction star schema.
+
+I then created a dedicated DAX measure layer rather than relying on implicit aggregation. For example, the A&E four-hour breach KPI uses the raw breach count divided by total attendances instead of averaging daily percentages.
+
+I reconciled Power BI directly against PostgreSQL. The model matched 90 fact rows, 25,800 A&E attendances, 5,113 four-hour breaches and a weighted breach rate of 19.82%.
+
+The reconciliation process also identified a real modelling defect: a yellow/wind weather-warning category had been removed because Power Query duplicate removal was using only warning level rather than level plus type. I corrected the business key, refreshed the model and reconciled the final result to 20 warning Trust-days.
+
+I also retained recommended and approved OPEL separately so automated recommendations could be compared with human-reviewed decisions. Four recommendation mismatches reconciled exactly with four human overrides.
+
+Finally, I executed formal UAT covering source integrity, relationships, KPIs, filters, governance and known limitations. I deliberately left the ambulance KPI provisional because its source definition still needs clarification.
+
+The main lesson was that a reliable Power BI product is not just about visuals. It requires source validation, semantic modelling, correct aggregation, reconciliation, governance and testing.
+
+---
+
+# 2-Minute Interview Version
+
+During Week 15 of my NHS Operational Data Platform project, I built and validated the Power BI semantic layer on top of PostgreSQL.
+
+I started by inspecting the actual analytical source rather than assuming the earlier requirements were complete. That was important because I discovered raw fields that allowed me to upgrade several KPIs, including A&E breaches, weighted bed occupancy, workforce absence and recommended-versus-approved OPEL analysis.
+
+I built a star schema with a Trust-date fact table and Date, Trust, OPEL, pressure-status and weather-warning dimensions. The relationships are one-to-many and single-direction, and I created a dedicated measure table so reporting uses governed DAX rather than implicit aggregation.
+
+One example is the A&E four-hour breach rate. Instead of averaging daily percentages, I calculate total breaches divided by total attendances. I then reconciled that against PostgreSQL and confirmed 25,800 attendances, 5,113 breaches and a weighted rate of 19.82%.
+
+Testing also identified a genuine modelling issue. My weather dimension initially missed yellow/wind warnings because duplicate removal was based only on warning level. PostgreSQL exposed the mismatch, I identified the composite business key, corrected the dimension and reconciled the final warning count to 20 Trust-days.
+
+I also retained automated OPEL recommendations separately from human-approved OPEL levels, and confirmed four recommendation mismatches matched four human overrides.
+
+Finally, I executed formal UAT across data quality, relationships, calculations, filtering and governance. Where a business definition remained unresolved, such as ambulance handover delays, I left the measure provisional rather than overclaiming.
+
+So the project demonstrates not just Power BI visualisation, but source validation, dimensional modelling, DAX, SQL reconciliation, governance, defect investigation and formal testing.
+
+
+
