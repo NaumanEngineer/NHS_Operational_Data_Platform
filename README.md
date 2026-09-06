@@ -1049,7 +1049,48 @@ It is particularly relevant to roles such as:
 ---
 
 ## Disclaimer
+...........
 
+## Power BI Operational Intelligence Dashboard
+
+The project includes a complete Power BI management dashboard built on the validated PostgreSQL analytical layer.
+
+### Dashboard Pages
+
+- Executive Overview
+- Beds & Patient Flow
+- A&E & Ambulance
+- Workforce Pressure
+- OPEL & Governance
+- Trust-Day Investigation
+- Data Quality & Lineage
+- KPI Definitions & Interpretation
+
+### Key Capabilities
+
+The dashboard demonstrates:
+
+- weighted operational KPI calculation
+- Trust-level comparison
+- time-series operational analysis
+- patient-flow intelligence
+- workforce-pressure analysis
+- OPEL escalation monitoring
+- human-in-the-loop governance
+- recommendation-versus-approval analysis
+- operational drill-down
+- weather-warning context
+- data-quality assurance
+- source lineage
+- reconciliation controls
+
+### Governance
+
+Recommended and Approved OPEL are deliberately retained separately to preserve human oversight and traceability.
+
+Ambulance handover metrics remain provisional pending confirmation of the precise source-field business definition.
+
+The project uses synthetic data only and is not intended for live clinical or operational decision-making.
 This is a synthetic operational analytics platform for learning and portfolio demonstration.
 
 It is not a production NHS system and should not be used to make operational or clinical decisions.
