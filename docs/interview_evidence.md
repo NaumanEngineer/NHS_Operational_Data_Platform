@@ -1311,4 +1311,26 @@ Finally, I executed formal UAT across data quality, relationships, calculations,
 So the project demonstrates not just Power BI visualisation, but source validation, dimensional modelling, DAX, SQL reconciliation, governance, defect investigation and formal testing.
 
 
+## Power BI Dashboard — Interview Evidence
 
+### 2-Minute Explanation
+
+After validating the PostgreSQL operational data layer, I built a governed Power BI semantic model and management dashboard on top of the analytical view.
+
+I used a star-schema design with a central Trust-day fact table and dimensions for Date, Trust, OPEL, operational pressure and weather warnings.
+
+I implemented explicit DAX measures rather than relying on implicit percentage aggregation. For example, A&E breach rate, bed occupancy and workforce absence are calculated as weighted measures from their underlying numerators and denominators.
+
+The dashboard contains executive, operational, governance, investigation and data-quality views.
+
+A particularly important feature is the separation between Recommended and Approved OPEL. This allowed me to preserve human oversight and analyse where a human reviewer overrode the recommendation.
+
+I also built reconciliation controls for patient flow, recommendation-versus-approval mismatches and reporting completeness.
+
+During model validation I identified a Power Query defect where yellow-wind weather-warning records were lost because duplicate removal had been applied using the wrong key. I corrected the transformation to use the full warning-level and warning-type combination and reconciled the result back to PostgreSQL.
+
+The final dashboard therefore demonstrates not only Power BI reporting, but data modelling, QA, governance, traceability and responsible operational analytics.
+
+## CV Project Summary
+
+Built an end-to-end NHS-style operational intelligence platform using PostgreSQL, Power Query, dimensional modelling, DAX and Power BI. Developed management dashboards covering capacity, patient flow, A&E, workforce, OPEL escalation, human overrides, operational investigation and data quality. Implemented weighted KPIs, reconciliation controls, source lineage and human-in-the-loop governance, with synthetic data and explicit production-use limitations.
