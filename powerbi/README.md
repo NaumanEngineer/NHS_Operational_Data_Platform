@@ -30,6 +30,15 @@ The project uses **synthetic data only** and must not be used for real NHS clini
 
 ---
 
+## Power BI Report File
+
+The final Power BI Desktop report is:
+
+`NHS_Operational_Intelligence.pbix`
+
+This file contains the complete eight-page operational intelligence dashboard and governed semantic model described in this folder.
+.......
+
 # Current Implementation Status
 
 **Power BI semantic model and dashboard implementation complete — final dashboard UAT passed.**
