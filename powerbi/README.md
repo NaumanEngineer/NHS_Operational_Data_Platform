@@ -120,8 +120,8 @@ DimTrust ---- FactTrustDailyOperations ---- DimOPEL
               DimWeatherWarning
 
                   _Measures
+```text
 
-............
 
 
 ## Dashboard Implementation Status
