@@ -133,3 +133,34 @@ DimTrust ---- FactTrustDailyOperations ---- DimOPEL
               DimWeatherWarning
 
                   _Measures
+
+
+
+
+
+
+# Dashboard Screenshots
+
+## Executive Overview
+![Executive Overview](screenshots/executive_overview.png)
+
+## Beds & Patient Flow
+![Beds & Patient Flow](screenshots/beds_patient_flow.png)
+
+## A&E & Ambulance
+![A&E & Ambulance](screenshots/ae_ambulance.png)
+
+## Workforce Pressure
+![Workforce Pressure](screenshots/workforce_pressure.png)
+
+## OPEL & Governance
+![OPEL & Governance](screenshots/opel_governance.png)
+
+## Trust-Day Investigation
+![Trust-Day Investigation](screenshots/trust_day_investigation.png)
+
+## Data Quality & Lineage
+![Data Quality & Lineage](screenshots/data_quality_lineage.png)
+
+## KPI Definitions
+![KPI Definitions](screenshots/kpi_definitions.png)
