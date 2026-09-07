@@ -1,0 +1,47 @@
+Step 6 — Font hierarchy
+Use one consistent font family throughout the report.
+Good choices:
+- Segoe UI
+- Arial
+- Aptos
+Use roughly:
+- Page title: 20–24 pt
+- Section titles: 14–16 pt
+- KPI value: 22–30 pt
+- KPI label: 10–12 pt
+- Visual titles: 11–13 pt
+Do not mix multiple font families.
+
+Step 7 — Define spacing rules
+Use consistent spacing between objects.
+A simple rule:
+- 16–20 px between major visuals
+- 8–12 px between closely related elements
+Try to align visuals to the same left/right edges.
+Power BI has alignment controls under:
+
+Format / Arrange → Align
+
+Step 8 — Create a simple header bar
+Insert a rectangle shape across the top behind the title.
+Keep it simple.
+The header should contain:
+- dashboard title
+- page title
+- maybe reporting period later
+- navigation later
+Do not overload it.
+
+Step 9 — Define KPI card style
+All KPI cards should use the same visual style.
+We will use:
+- large number
+- small label
+- minimal border
+- subtle background
+- consistent height
+- no unnecessary icons
+Later we will place six cards across the top.
+
+
+
